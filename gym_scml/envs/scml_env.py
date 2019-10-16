@@ -3,7 +3,7 @@ from gym import error, spaces, utils
 from gym.utils import seeding
 
 class ScmlEnv(gym.Env):
-    metadata = {'render.modes': ['factory_manager']}
+    metadata = {'render.modes': ['human']}
     
     def __init__(self):
         pass
@@ -14,7 +14,7 @@ class ScmlEnv(gym.Env):
     def reset(self):
         pass
     
-    def render(self, mode='factory_manager'):
+    def render(self, mode='human'):
         pass
     
     def close(self):

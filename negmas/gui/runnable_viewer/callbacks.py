@@ -36,20 +36,12 @@ def run_callback(n_clicks, run_option, config_contents, filename, date):
     print(f'n_clciks: {n_clicks}, run_option: {run_option}, filename: {filename} !!') 
     run_config = parse_contents(config_contents, filename, date)
     run_type = get_class(run_option)
-    try:
-        if run_type == get_class('negmas.apps.scml.world.SCMLWorld'):
-            scmlworld = run_type.load_from_config()
-        elif run_type == get_class('negmas.situated.World'):
-            world = run_type.load_from_config()
-        elif run_type == get_class('negmas.mechanisms.Mechanism'):
-            mechanism = run_type.load_from_config()
-        else:
-            print("can not get the run class!!!")
-    except Exception as e:
-        print(e)
-        print("need to realize the function load_from_config()")
+    run_callback.runner = run_type.load_from_config(run_config)
  
     print(f"run_type={run_type}")
+    if run_callback.runner is not None:
+        run_callback.runner.run()
+    
     print("==========================End Debug Information===================================================")
     return '/run'
 

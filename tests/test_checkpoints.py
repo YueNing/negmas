@@ -1,22 +1,23 @@
 from pathlib import Path, PosixPath
 
-from hypothesis import given, example
+from hypothesis import given, example, settings
 import hypothesis.strategies as st
 from negmas import SAOMechanism, MappingUtilityFunction, AspirationNegotiator
 from negmas.checkpoints import CheckpointRunner
 from negmas.helpers import unique_name
 
+import pytest
 
 def checkpoint_every(args):
     pass
 
-
+@settings(deadline=None)
 @given(
     single_checkpoint=st.booleans(),
     checkpoint_every=st.integers(1, 4),
     exist_ok=st.booleans(),
 )
-def test_can_run_from_checkpoint(tmp_path, single_checkpoint, checkpoint_every, exist_ok):
+def test_can_run_from_checkpoint_(tmp_path, single_checkpoint, checkpoint_every, exist_ok):
     import shutil
     new_folder: Path = tmp_path / unique_name("empty", sep="")
     second_folder: Path = tmp_path / unique_name("second", sep="")
@@ -96,13 +97,14 @@ def test_can_run_from_checkpoint(tmp_path, single_checkpoint, checkpoint_every, 
     runner.run()
 
 
+@settings(deadline=None)
 @given(
     checkpoint_every=st.integers(1, 4),
     exist_ok=st.booleans(),
     copy=st.booleans(),
     fork_after_reset=st.booleans(),
 )
-@example(tmp_path=PosixPath('/private/var/folders/5t/9gn9cd716f34b13y2rk40p4w0000gn/T/pytest-of-yasser/pytest-104/test_can_run_from_checkpoint0'), checkpoint_every=1, exist_ok=False, copy=True, fork_after_reset=False)
+@example(tmp_path=PosixPath('/tmp/pytest-of-naodongbanana/pytest-16/test_can_run_from_checkpoint_0'), checkpoint_every=1, exist_ok=False, copy=True, fork_after_reset=False)
 def test_can_run_from_checkpoint(tmp_path, checkpoint_every, exist_ok, copy, fork_after_reset):
     import shutil
     new_folder: Path = tmp_path / unique_name("empty", sep="")
@@ -228,3 +230,6 @@ def test_can_run_from_checkpoint(tmp_path, checkpoint_every, exist_ok, copy, for
 
     runner.run()
 
+
+if __name__ == "__main__":
+    pytest.main(args=[__file__])

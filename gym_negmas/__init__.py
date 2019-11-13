@@ -1,3 +1,5 @@
+__version__ = '2019.11.13'
+
 from gym.envs.registration import register
 from gym_negmas.envs import spaces
 

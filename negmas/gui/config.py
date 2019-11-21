@@ -53,3 +53,9 @@ _right_up_group_runnable_component = dbc.Row(
 _back_to_parent = dbc.Row(
     dcc.Link(dbc.Button("back_to_parent", id="back_to_parent", outline=True, color="secondary", className="mr-1"), href="/backToParent"),
 )
+
+_interval_one_second = dcc.Interval(
+    id="interval-component",
+    interval=1*1000, # one second
+    n_intervals=0
+)

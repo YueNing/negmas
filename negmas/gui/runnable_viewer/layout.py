@@ -10,7 +10,8 @@ from negmas.gui.config import (Layout,
                     _left_up_button_group, 
                     _right_up_group_runnable_component, 
                     _new_checkpoint, 
-                    _back_to_parent
+                    _back_to_parent, 
+                    _interval_one_second
                 )
 
 def layout(object_type: Type[NamedObject]):
@@ -63,7 +64,8 @@ def layout(object_type: Type[NamedObject]):
                         ] + children_layouts_dict['graph_widgets']
                     )
                 ]
-            )
+            ),
+            _interval_one_second
         ],
     )
 

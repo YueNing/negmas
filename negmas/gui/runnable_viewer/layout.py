@@ -6,7 +6,12 @@ import dash_bootstrap_components as dbc
 import dash_html_components as html
 from negmas.gui.named_viewer import named_viewer_objects
 from negmas.gui.named_viewer.layout import layout as named_viewer_layout
-from negmas.gui.config import Layout, _left_up_button_group, _right_up_group_runnable_component, _new_checkpoint
+from negmas.gui.config import (Layout, 
+                    _left_up_button_group, 
+                    _right_up_group_runnable_component, 
+                    _new_checkpoint, 
+                    _back_to_parent
+                )
 
 def layout(object_type: Type[NamedObject]):
 

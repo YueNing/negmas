@@ -6,11 +6,9 @@ Layout: layout ratio and info
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_bootstrap_components as dbc
-import plotly.graph_objs as go
-import pandas as pd
-import dash_table
 
 
+# all config for Layout, contained settings and basic layout info
 Layout = {
     "left":{"size": 4, "offset": 1},
     "right":{"size": 8, "layout":{"left":{"scale": 6}, "right":{"scale":6}}}
@@ -29,7 +27,7 @@ _left_up_button_group = dbc.Row(
 
 _new_checkpoint = dbc.Row(
     [
-        dcc.Link(dbc.Button("Save Checkpoint", id="run_new", outline=True, color="secondary", className="mr-1"), href="/save_newCheckpoint"),
+        dcc.Link(dbc.Button("Save Checkpoint", id="save_checkpoint", outline=True, color="secondary", className="mr-1"), href="/save_newCheckpoint"),
     ]
 )
 
@@ -50,4 +48,8 @@ _right_up_group_runnable_component = dbc.Row(
             ]
         ),
     ]
+)
+
+_back_to_parent = dbc.Row(
+    dcc.Link(dbc.Button("back_to_parent", id="back_to_parent", outline=True, color="secondary", className="mr-1"), href="/backToParent"),
 )

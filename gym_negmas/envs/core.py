@@ -2,7 +2,8 @@ import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
 from copy import copy, deepcopy
-
+from retrying import retry
+import gym_negmas
 
 class RLBOANegmasNegotiationEnv(gym.Env):
     """
@@ -25,8 +26,8 @@ class RLBOANegmasNegotiationEnv(gym.Env):
         noop_action=None
     ):
         """
-        :params: observation_sapce
-        :params: action_space
+        :params: observation_sapce: utility value of every outcome as activation space
+        :params: action_space: go up, go down, stay in the current bin.
         "params: steps
         """
         self.observation_space = None
@@ -49,7 +50,7 @@ class RLBOANegmasNegotiationEnv(gym.Env):
         
         # here consided action_space as a 3 values Discrete {0, 1, 2}, means {"go_up", "go_down", "stay"}
         if self._default_action is None:
-            if isinstance(action_space, gym_scml.envs.spaces.Dict):
+            if isinstance(action_space, gym_negmas.envs.spaces.Dict):
                 self._default_action = action_space.no_op()
     
     @property
@@ -68,9 +69,13 @@ class RLBOANegmasNegotiationEnv(gym.Env):
         """
         pass
 
-    def step(self):
+    def step(self, action):
         """
-        call step in checkpoints in Negmas
+        call step in checkpoints in Negmas,
+        Action space as[
+            []
+        ]
+        here action is the call the function of negotiator that 
         """
         pass
     

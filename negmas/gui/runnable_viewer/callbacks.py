@@ -6,8 +6,9 @@ import base64
 import pandas as pd
 import io
 import json
+from typing import Dict
 
-def parse_contents(contents, filename, date):
+def parse_contents(contents, filename, date) -> Dict:
     content_type, content_string = contents.split(',')
 
     decoded = base64.b64decode(content_string)
@@ -36,7 +37,7 @@ def run_callback(n_clicks, run_option, config_contents, filename, date):
     print(f'n_clciks: {n_clicks}, run_option: {run_option}, filename: {filename} !!') 
     run_config = parse_contents(config_contents, filename, date)
     run_type = get_class(run_option)
-    run_callback.runner = run_type.load_from_config(run_config)
+    run_callback.runner = run_type.load_from_config(**run_config)
  
     print(f"run_type={run_type}")
     if run_callback.runner is not None:

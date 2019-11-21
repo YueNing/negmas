@@ -25,6 +25,8 @@ def display_page(pathname):
         return main_entry_layout
     if pathname == '/load':
         return
+    if pathname == '/run':
+        return
     else:
         return '404'
 

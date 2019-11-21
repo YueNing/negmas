@@ -5,6 +5,7 @@ from typing import List, Type, Dict, Any, Optional, Union
 
 from negmas import Mechanism, NamedObject, Agent
 from negmas.helpers import get_full_type_name, instantiate, get_class
+import uuid
 
 __all__ = [
     "Visualizer", "MechanismVisualizer", "register_visualizer", "visualizer", "visualizer_type", "visualizer_type_name", "Widget"
@@ -53,7 +54,7 @@ class Visualizer(ABC):
             return Widget(self.widget_kind(name), content=dict(name=self.object.name, id=self.object.id)
                           , params=params)
         if name == "children":
-            return {k: [_.visualizer.render_widget("basic_info").contents for _ in v] for k, v in self.children.items()}
+            return {k: [_.visualizer.render_widget("basic_info").content for _ in v] for k, v in self.children.items()}
         return dict()
 
     @property
@@ -70,6 +71,7 @@ class Visualizer(ABC):
         """Returns all children of a given category"""
         return self.children.get(category, [])
 
+    @classmethod
     def default_widget_name(cls) -> Optional[str]:
         """Name of the default widget to display when showing this type of object. By default, it is the first widget
         returned by `widget_names`"""
@@ -159,10 +161,18 @@ def visualizer_type_name(x: Union[str, Type[NamedObject], NamedObject]) -> Optio
 
 
 class MechanismVisualizer(Visualizer):
+    """
+        Visualizer for Mechanism
+        
+        Info can be showed in MechanismVisalizer
+        1. basic_info (dict)
+        2. negotiator (children)
+        3. offer_utils (graph_data)
+    """
 
     @classmethod
     def widget_kind(cls, widget_name: str) -> str:
-        if widget_name == "ofer_utils":
+        if widget_name == "offer_utils":
             return "graph_data"
         return super().widget_kind(widget_name)
 
@@ -177,7 +187,14 @@ class MechanismVisualizer(Visualizer):
         return super().widget_params(name)
 
     def render_widget(self, name: str, params: Dict[str, Any] = None) -> Optional[Widget]:
-        raise NotImplementedError()
+        """
+            Render widget info contained in MechanismVisualizer
+            return: class Widget, content: prepare for using dash to render
+        """
+        if name == 'offer_utils':
+            return Widget(kind=self.widget_kind(name), content=dict(id=uuid.uuid4, name=name), params=params)
+        else:
+            return super().render_widget(name, params)
 
     @property
     def children(self) -> Dict[str, List[NamedObject]]:
@@ -188,7 +205,8 @@ class MechanismVisualizer(Visualizer):
 
     @classmethod
     def children_categories(cls) -> List[str]:
-        return ["negotiators"]
+        return [
+            "negotiators"]
 
 
 class AgentVisualizer(Visualizer):
@@ -239,7 +257,7 @@ class WorldVisualizer(Visualizer):
 
     @classmethod
     def default_widget_name(cls) -> str:
-        return super().default_widget()
+        return super().default_widget_name()
 
     @property
     def children(self) -> Dict[str, List[NamedObject]]:

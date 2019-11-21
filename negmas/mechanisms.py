@@ -799,37 +799,6 @@ class Mechanism(NamedObject, EventSource, CheckpointMixin, ABC):
                     break
         return states
 
-    @classmethod
-    def load_from_config(cls, **config) -> Mechanism:
-        """
-        load from config, used for vnegmas
-        added by Ning Yue, 2019.11.21
-        """
-        
-        # TODO: add type check code later
-        return Mechanism(
-            issues = config.get('Issues') if config.get('Issues') else None,
-            outcomes = config.get('outcomes') if config.get('outcomes') else None,
-            n_steps = config.get('n_steps') if config.get('n_steps') else None,
-            time_limit = config.get('time_limit') if config.get('time_limit') else None,
-            step_time_limit = config.get('step_time_limit') if config.get('step_time_limit') else None,
-            max_n_agents = config.get('max_n_agents') if config.get('max_n_agents') else None,
-            dynamic_entry = config.get('dynamic_entry') if config.get('dynamic_entry') else False,
-            cache_outcomes = config.get('cache_outcomes') if config.get('cache_outcomes') else True,
-            max_n_outcomes = config.get('max_n_outcomes') if config.get('max_n_outcomes') else 1000000,
-            keep_issue_names = config.get('keep_issue_names') if config.get('keep_issue_names') else True,
-            annotation = config.get('annotation') if config.get('annotation') else None,
-            state_factory = config.get('state_factory') if config.get('state_factory') else MechanismState,
-            enable_callbacks = config.get('enable_callbacks') if config.get('enable_callbacks') else False,
-            checkpoint_every = config.get('checkpoint_every') if config.get('checkpoint_every') else 1,
-            checkpoint_folder = config.get('checkpoint_folder') if config.get('checkpoint_folder') else None,
-            checkpoint_filename = config.get('checkpoint_filename') if config.get('checkpoint_filename') else None,
-            extra_checkpoint_info = config.get('extra_checkpoint_info') if config.get('extra_checkpoint_info') else None,
-            single_checkpoint = config.get('single_checkpoint') if config.get('single_checkpoint') else True,
-            exist_ok = config.get('exist_ok') if config.get('exist_ok') else True,
-            name = config.get('name') if config.get('name') else None,
-        )
-
     def run(self, timeout=None) -> MechanismState:
         if timeout is None:
             for _ in self:

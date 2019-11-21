@@ -4,6 +4,7 @@ from gym.utils import seeding
 from copy import copy, deepcopy
 from retrying import retry
 import gym_negmas
+from gym_negmas.envs.negmas_manager import Instance
 
 class RLBOANegmasNegotiationEnv(gym.Env):
     """
@@ -67,7 +68,10 @@ class RLBOANegmasNegotiationEnv(gym.Env):
         Initializes the RLBOANegmasNegotiationEnv, 
         means here setup  negotiation/mechanism of negmas
         """
-        pass
+        self.instance = Instance(
+            checkpoint_folder = "./tmp",
+            checkpoint_filename = "mechanism",
+        )
 
     def step(self, action):
         """
@@ -77,7 +81,8 @@ class RLBOANegmasNegotiationEnv(gym.Env):
         ]
         here action is the call the function of negotiator that 
         """
-        pass
+        next_state, reward, done = self.instance.step(action)
+        return next_state, reward, done
     
     def reset(self):
         """

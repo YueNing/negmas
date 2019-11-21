@@ -45,6 +45,8 @@ from negmas.generics import ikeys
 from negmas.helpers import snake_case
 from negmas.negotiators import Negotiator
 
+from gym_negmas.envs.negmas_manager import RLBOADecorator
+ 
 __all__ = ["Mechanism", "Protocol", "MechanismRoundResult"]
 
 
@@ -667,7 +669,8 @@ class Mechanism(NamedObject, EventSource, CheckpointMixin, ABC):
 
         return result
 
-    def step(self) -> MechanismState:
+    @RLBOADecorator(mode="gym")
+    def step(self, action=None) -> MechanismState:
         """Runs a single step of the mechanism.
 
         Returns:

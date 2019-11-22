@@ -9,7 +9,12 @@ import json
 from typing import Dict
 from negmas.visualizers import *
 from negmas.checkpoints import CheckpointRunner
+from negmas.sao import SAOMechanism
+from negmas.apps.scml import SCMLWorld
+from negmas.visualizers import VISUALIZERS, visualizer
+from negmas.helpers import get_full_type_name, instantiate, get_class
 
+from typing import Optional
 
 def parse_contents(contents, filename, date) -> Dict:
     content_type, content_string = contents.split(',')
@@ -36,26 +41,42 @@ def parse_contents(contents, filename, date) -> Dict:
     State('new-config-path', 'filename'),
     State('new-config-path', 'last_modified')])
 def run_callback(n_clicks, run_option, config_contents, filename, date):
+    """
+    visualizer run callback has two option, 
+    1. runner(Optional[SAOMechanism, SCMLWorld]) has member visualizer, just directly use visualizer member
+    2、search from VISUALIZER
+    3. use visualizer to get a new Visualizer
+    
+    """
     print('====================Debug Information for run_callback===========================================')
     print(f'n_clciks: {n_clicks}, run_option: {run_option}, filename: {filename} !!')
     
     # get config from json file
     run_config = parse_contents(config_contents, filename, date)
     
-    # generate a visualizer
-    run_visualizer = visualizer(get_class(run_option)(**run_config))
+    # get the runner instance
+    runner: Optional[SAOMechanism, SCMLWorld] = get_class(run_option)(**run_config)
     
-    # return the self.object in class visualizer
+    # get the runner_visualizer
+    try:    
+        # get the runner_visualizer from runner member
+        runner_visualizer = runner.visualizer
+    except:
+        try:
+            # if already register in VISUALIZERS, get visualizer type from VISUALIZERS
+            runner_visualizer = get_class(VISUALIZERS[run_option])(runner)
+        except:
+            # search a new Visualizer
+            runner_visualizer = visualizer(runner)
 
-    print(f"run_type={run_type}")
-
-    if run_visualizer.object is not None:
-        run_visualizer.object.run()
+    try:
+        runner_visualizer.object.run()
+        # use attribute checkpointrunner of run_callback, step_by_step to check the result 
+        run_callback.checkpointrunner = CheckpointRunner(folder=runner_visualizer.object.checkpoint_folder)
+        run_callback.checkpointrunner.run()
+    except Exception as e:
+        print(f"Running Callback failure: {e} !")
     
-    # use attribute checkpointrunner of run_callback, step_by_step to check the result 
-    run_callback.checkpointrunner = CheckpointRunner(folder=run_visualizer.object.checkpoint_folder)
-
-    run_callback.checkpointrunner.run()
     print("==========================End Debug Information===================================================")
     return '/run'
 
@@ -74,8 +95,7 @@ def cache_runnable_viewer(n):
     """
     Live cache data, update this data later use function update_runnable_viewer 
     """
-    run_callback.checkpointrunner.loaded_object().
-    pass
+    run_callback.checkpointrunner.loaded_object()
 
 @app.callback(
     Output('graphs_group', 'figure'),

@@ -13,23 +13,47 @@ from negmas.gui.config import (Layout,
                     _back_to_parent, 
                     _interval_one_second
                 )
+from negmas.gui.utils import render
+from negmas.visualizer import Widget 
 
 def layout(object_type: Type[NamedObject]):
+    """
+    Predefine the layout structure
+    do not contain the data
+    live update when call run_callback function
+    """
 
-    # get class type defined as obejct_type
+    # get class type defined as obejct_type, return a visualizer calss, not instance
+    # so can not access self.object in visualizer
     v = visualizer_type(object_type)
 
+    # all widgets name
+    widget_names = v.widget_names()
+
+    # children_categories
+    children_categories = v.children_categories()
+    
     # layout id 
     layout_id = uuid.uuid4()
     
-    # save all widgets content here
-    widgets = [v.render_widget(widget, v.widget_params(widget)) for widget in v.widget_names()]
-    
+    # all widget html code saved in dict layouts_dict
+    # can access all predefined layout from layouts_dict
+    # such as here, all graph_widgets, basic_info and childrens info(negotiators)
+    layouts_dict = {"graph_widgets":[]}
+
+    # base on widget_names and children_categories to set the predefined layout, 
+    # widget id format 'self.object.id_widget_name'
+    # self.object.id is the id of object_type, 
+    # later saved in the member self.object of Visualizer
+    for widget_name in widget_names:
+        widget_id = f'{object_type.id}_{widget_name}'
+        kind, html_code = render(Widget(kind=v.widget_kind))
+        
+
     # save all html here 
     children_layouts = [render(widget) for widget in widgets]
 
     # sorted the children_layouts as basic_info, childrens, graph_widgets
-    children_layouts_dict = {"graph_widgets":[]}
 
     for children_layout in children_layouts:
         if children_layout[0] == "graph_data":
@@ -70,32 +94,3 @@ def layout(object_type: Type[NamedObject]):
     )
 
     return layout
-
-def render(widget: Optional[Widget]) -> List[str]:
-    """
-    Render all widget content here, convert Widget to html
-    return are widget name and rendered wiget html content.
-    """
-    if isinstance(widget, Widget):
-        if(widget.kind == "graph_data"):
-            return [widget.kind, 
-                dcc.Graph(
-                    id = widget.content.id,
-                    figure={},
-                )
-            ]
-        elif(widget.kind == "dict"):
-            # TODO: return the basic info, kind is dict
-            return [widget.content.name, 
-                html.Div(
-                    id=widget.content.id, 
-                    children=[]
-                )
-            ]   
-    
-    elif type(widget) == dict:
-        # TODO: here is for children component, render here as dropmenu
-        return [
-            "childrens", 
-            dcc.dropmenu(),
-        ]

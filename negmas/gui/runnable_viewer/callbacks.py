@@ -16,6 +16,9 @@ from negmas.helpers import get_full_type_name, instantiate, get_class
 
 from typing import Optional
 
+from negmas.gui.run_callback.layout import layout
+from negmas.gui.utils import render
+
 def parse_contents(contents, filename, date) -> Dict:
     content_type, content_string = contents.split(',')
 
@@ -47,33 +50,40 @@ def run_callback(n_clicks, run_option, config_contents, filename, date):
     2、search from VISUALIZER
     3. use visualizer to get a new Visualizer
     
+    member of function run_callback can be used
+
+    param run_callback.layout:
+    param run_callback.checkpointrunner:
+    param run_callback.runner_visualizer:
     """
+
     print('====================Debug Information for run_callback===========================================')
     print(f'n_clciks: {n_clicks}, run_option: {run_option}, filename: {filename} !!')
-    
+
     # get config from json file
     run_config = parse_contents(config_contents, filename, date)
     
     # get the runner instance
     runner: Optional[SAOMechanism, SCMLWorld] = get_class(run_option)(**run_config)
     
+    # use attribute checkpointrunner of run_callback, step_by_step to check the result 
+    run_callback.checkpointrunner = CheckpointRunner(folder=runner.checkpoint_folder)
+    
+    # set the predefined layout base on the checkpointrunner instance
+    run_callback.layout = layout(checkpointrunner.loaded_object())
+
     # get the runner_visualizer
     try:    
         # get the runner_visualizer from runner member
-        runner_visualizer = runner.visualizer
+        run_callback.runner_visualizer = checkpointrunner.loaded_object().visualizer
     except:
-        try:
-            # if already register in VISUALIZERS, get visualizer type from VISUALIZERS
-            runner_visualizer = get_class(VISUALIZERS[run_option])(runner)
-        except:
-            # search a new Visualizer
-            runner_visualizer = visualizer(runner)
+        # search a new Visualizer and set object as runner
+        run_callback.runner_visualizer = visualizer(checkpointrunner.loaded_object())
 
     try:
-        runner_visualizer.object.run()
-        # use attribute checkpointrunner of run_callback, step_by_step to check the result 
-        run_callback.checkpointrunner = CheckpointRunner(folder=runner_visualizer.object.checkpoint_folder)
+        run_callback.runner_visualizer.object.run()
         run_callback.checkpointrunner.run()
+    
     except Exception as e:
         print(f"Running Callback failure: {e} !")
     
@@ -93,12 +103,29 @@ def config_file_callback(filename):
 )
 def cache_runnable_viewer(n):
     """
-    Live cache data, update this data later use function update_runnable_viewer 
+    TODO: Live cache data, update this data later use function update_runnable_viewer 
     """
-    run_callback.checkpointrunner.loaded_object()
+    obj = run_callback.checkpointrunner.loaded_object()
+
+    basic_info_rendred = render(run_callback.runner_visualizer.render_widget('basic_info'))
+    graphs_data_rendred = {
+        'offer_utils': render(run_callback.runner_visualizer.render_widget('offer_utils'))
+    }
+    return {
+        'basic_info_rendred': basic_info_rendred, 
+        'childrens_rendred': childrens_rendred,
+        'graphs_data_rendred': graphs_data_rendred,
+        }
+
 
 @app.callback(
-    Output('graphs_group', 'figure'),
+    for widget_name in run_callback.runner_visualizer.widget_names:
+        if run_callback.runner_visualizer.widget_kind(widget_name) == 'graph_datas':
+            Output(f'{run_callback.runner_visualizer.object.id}_{widget_name}', 'figure')
+        elif widget_name == 'basic_info':
+            Output(f'{run_callback.runner_visualizer.object.id}_{widget_name}', 'basivc_info')
+        elif widget_name == 'childrens':
+            Output(f'{run_callback.runner_visualizer.object.id}_{widget_name}', 'childrens')
     [Input('data_cache', 'children')]
 )
 def update_runnable_viewer(cached_data):
@@ -106,5 +133,6 @@ def update_runnable_viewer(cached_data):
     When detect cached data, live update the graphs in runnable_viewer
     """
     # TODO: not Implemented
-    pass
-
+    for rendered_widget_name, rendered_data in cached_data.items():
+        
+    

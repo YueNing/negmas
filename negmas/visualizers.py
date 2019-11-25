@@ -192,7 +192,17 @@ class MechanismVisualizer(Visualizer):
             return: class Widget, content: prepare for using dash to render
         """
         if name == 'offer_utils':
-            return Widget(kind=self.widget_kind(name), content=dict(id=uuid.uuid4, name=name), params=params)
+            # how to calculate offer_utils
+            # faker member of self.object, offer_utils
+            # offer_utils = self.object.offer_utils
+            # realistic data come from self.object, need to analyse this object
+            # self.object also running in the class CheckpointRunner
+            offer_utils = []
+
+            return Widget(
+                kind=self.widget_kind(name), 
+                content=dict(id=f('{self.object.id}_{name}'), name=name, data=offer_utils), 
+                params=params)
         else:
             return super().render_widget(name, params)
 

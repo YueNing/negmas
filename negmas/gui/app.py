@@ -26,7 +26,8 @@ def display_page(pathname):
     if pathname == '/load':
         return
     if pathname == '/run':
-        return
+        # get the /run router, return the relative layout
+        return run_callback.layout
     else:
         return '404'
 

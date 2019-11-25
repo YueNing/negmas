@@ -59,3 +59,12 @@ _interval_one_second = dcc.Interval(
     interval=1*1000, # one second
     n_intervals=0
 )
+
+
+
+# for system setting such as runnable_object
+runnables = [
+    'negmas.apps.scml.SCMLWorld',
+    'negmas.situated.World',
+    'negmas.mechanisms.Mechanism',
+]

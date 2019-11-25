@@ -4,6 +4,11 @@ import dash_bootstrap_components as dbc
 import dash_html_components as html
 import dash_core_components as dcc
 from dash.dependencies import Input, Output, State
+from negmas.gui.runnable_viewer.layout import layout as runnable_viewer_layout
+from negmas import Mechanism
+from negmas.gui.config import runnables
+from negmas.helpers import get_full_type_name, instantiate, get_class
+
 # from named_viewer.layout import layout as named_viewer_layout
 # from runnable_viewer.layout import layout as runnable_view_layout
 
@@ -28,12 +33,15 @@ def serve_layout():
     """
     if flask.has_request_context():
         return url_bar_and_content_div
+    
+    runnable_layouts = [runnable_view_layout(get_class(runnable)) for runnable in runnables]
+    
     return html.Div([
         url_bar_and_content_div,
         main_entry_layout,
         run_online,
         run_offline,
-    ])
+    ] + runnable_layouts)
 
 app.layout = serve_layout
 

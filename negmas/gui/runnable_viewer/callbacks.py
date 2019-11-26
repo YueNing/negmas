@@ -7,17 +7,17 @@ import pandas as pd
 import io
 import json
 from typing import Dict
-from negmas.visualizers import *
 from negmas.checkpoints import CheckpointRunner
 from negmas.sao import SAOMechanism
 from negmas.apps.scml import SCMLWorld
 from negmas.visualizers import VISUALIZERS, visualizer
 from negmas.helpers import get_full_type_name, instantiate, get_class
-
 from typing import Optional
 
-from negmas.gui.run_callback.layout import layout
+from negmas.gui.runnable_viewer.layout import layout
 from negmas.gui.utils import render
+# cache used for cache expensive computate
+from negmas.gui import cache
 
 def parse_contents(contents, filename, date) -> Dict:
     content_type, content_string = contents.split(',')
@@ -70,15 +70,15 @@ def run_callback(n_clicks, run_option, config_contents, filename, date):
     run_callback.checkpointrunner = CheckpointRunner(folder=runner.checkpoint_folder)
     
     # set the predefined layout base on the checkpointrunner instance
-    run_callback.layout = layout(checkpointrunner.loaded_object())
+    run_callback.layout = layout(type(run_callback.checkpointrunner.loaded_object))
 
     # get the runner_visualizer
     try:    
         # get the runner_visualizer from runner member
-        run_callback.runner_visualizer = checkpointrunner.loaded_object().visualizer
+        run_callback.runner_visualizer = run_callback.checkpointrunner.loaded_object.visualizer
     except:
         # search a new Visualizer and set object as runner
-        run_callback.runner_visualizer = visualizer(checkpointrunner.loaded_object())
+        run_callback.runner_visualizer = visualizer(run_callback.checkpointrunner.loaded_object)
 
     try:
         run_callback.runner_visualizer.object.run()
@@ -97,42 +97,75 @@ def config_file_callback(filename):
     else:
         return html.Div('Config file path ... ')
 
-@app.callback(
-    Output('data_cache', 'children'),
-    [Input('interval-component', 'n_intervals')]
-)
-def cache_runnable_viewer(n):
-    """
-    TODO: Live cache data, update this data later use function update_runnable_viewer 
-    """
-    obj = run_callback.checkpointrunner.loaded_object()
-
-    basic_info_rendred = render(run_callback.runner_visualizer.render_widget('basic_info'))
-    graphs_data_rendred = {
-        'offer_utils': render(run_callback.runner_visualizer.render_widget('offer_utils'))
-    }
-    return {
-        'basic_info_rendred': basic_info_rendred, 
-        'childrens_rendred': childrens_rendred,
-        'graphs_data_rendred': graphs_data_rendred,
-        }
 
 
-@app.callback(
-    for widget_name in run_callback.runner_visualizer.widget_names:
-        if run_callback.runner_visualizer.widget_kind(widget_name) == 'graph_datas':
-            Output(f'{run_callback.runner_visualizer.object.id}_{widget_name}', 'figure')
-        elif widget_name == 'basic_info':
-            Output(f'{run_callback.runner_visualizer.object.id}_{widget_name}', 'basivc_info')
-        elif widget_name == 'childrens':
-            Output(f'{run_callback.runner_visualizer.object.id}_{widget_name}', 'childrens')
-    [Input('data_cache', 'children')]
-)
-def update_runnable_viewer(cached_data):
+def get_dataframe(session_id):
     """
-    When detect cached data, live update the graphs in runnable_viewer
+    Use flask_caching.Cache base on session_id to calculate the visualizer data and store it
     """
-    # TODO: not Implemented
-    for rendered_widget_name, rendered_data in cached_data.items():
-        
+    @cache.memoize(timeout=1)
+    def query_and_serialize_data(session_id):
+        # just widgets basic_info, childrens, graphs needed to update
+        dataframe = {
+            'graphs':[], 
+            'basic_info': None, 
+            'childrens': None,
+            }
+
+        for widget_name in run_callback.runner_visualizer.widget_names():
+            if run_callback.runner_visualizer.widget_kind(widget_name) == "graph_data":
+                # Put all graph objects into a list
+                dataframe['graphs'].append(render(
+                    run_callback.runner_visualizer.render_widget(widget_name)
+                ))
+            else:
+                # put another widget directly in dict dataframe
+                dataframe[widget_name] = render(run_callback.runner_visualizer.render_widget(widget_name))
+        return dataframe
     
+    return query_and_serialize_data(session_id)
+
+@app.callback(
+    [
+        Output('basic_info', 'children'),
+        Output('childrens', 'children'),
+        Output('graph1', 'figure'),
+        Output('graph2', 'figure'),
+        Output('graph3', 'figure'),
+        Output('graph4', 'figure')
+    ],
+    [
+        Input('interval-component', 'n_intervals'),
+        Input('session_id', 'children'),
+    ]
+)
+def update_page_default_layout(n, session_id):
+    """
+    Update entire page at once
+    """
+    # get data frame from cache, format is dict
+    df = get_dataframe(session_id)
+
+    if len(df['graphs']) > 4:
+        show_graphs = df['graphs'][:4]
+    else:
+        show_graphs == df['graphs'] + [render('empty')]*(4-len(df['graphs']))
+    
+    result = tuple([df['basic_info'], df['childrens']] + show_graphs)
+
+    return result
+
+
+#TODO: control bar callback functions
+
+def control_stop_start():
+    pass 
+
+def control_next_step():
+    pass
+
+def control_previous_step():
+    pass 
+
+
+

@@ -9,11 +9,13 @@ import dash_daq as daq
 from typing import Type
 
 from negmas import NamedObject
-from negmas.visualizers import *
+# from negmas.visualizers import *
 
-from negmas.gui import *
+from negmas.gui import app, main_entry_layout, serve_layout
+from negmas.gui.settings import cache_config
+
 # from named_viewer.callbacks import callbacks as named_viewer_callbacks
-from runnable_viewer.callbacks import run_callback, config_file_callback
+from negmas.gui.runnable_viewer.callbacks import run_callback, config_file_callback
 
 @app.callback(
     Output('page-content', 'children'),

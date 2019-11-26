@@ -3,26 +3,36 @@ import dash
 import dash_bootstrap_components as dbc
 import dash_html_components as html
 import dash_core_components as dcc
+import uuid
 from dash.dependencies import Input, Output, State
+from flask_caching import Cache
 from negmas.gui.runnable_viewer.layout import layout as runnable_viewer_layout
 from negmas import Mechanism
-from negmas.gui.config import runnables
+from negmas.gui.settings import RUNNABLES, CACHE_CONFIG, UPDATE_INTERVAL
 from negmas.helpers import get_full_type_name, instantiate, get_class
 
 # from named_viewer.layout import layout as named_viewer_layout
-# from runnable_viewer.layout import layout as runnable_view_layout
+from negmas.gui.runnable_viewer.layout import layout as runnable_view_layout
 
 # 'https://codepen.io/chriddyp/pen/bWLwgP.css',
 external_style_sheets = [dbc.themes.CERULEAN]
 
 app = dash.Dash(__name__, external_stylesheets=external_style_sheets)
+cache = Cache(app.server, config=CACHE_CONFIG)
+
+_interval_one_second = dcc.Interval(
+    id="interval-component",
+    interval=UPDATE_INTERVAL*1000, # one second
+    n_intervals=0
+)
+
 url_bar_and_content_div = html.Div(
     [
         dcc.Location(id='url', refresh=False),
         html.Div(
             id='page-content'
         ),
-        html.Div(id='intermediate-value', style={'display': 'none'})
+        html.Div(id='intermediate-value', style={'display': 'none'}),
     ]
 )
 
@@ -34,16 +44,16 @@ def serve_layout():
     if flask.has_request_context():
         return url_bar_and_content_div
     
-    runnable_layouts = [runnable_view_layout(get_class(runnable)) for runnable in runnables]
-    
+    runnable_layouts = [runnable_view_layout(get_class(runnable)) for runnable in RUNNABLES]
+    session_id = str(uuid.uuid4())
+
     return html.Div([
+        html.Div(session_id, id="session_id", style={'display':'none'}),
         url_bar_and_content_div,
         main_entry_layout,
         run_online,
         run_offline,
     ] + runnable_layouts)
-
-app.layout = serve_layout
 
 navbar = dbc.NavbarSimple(
     children=[
@@ -187,5 +197,47 @@ main_entry_body = dbc.Container(
     ],
     className="mt-0",
 )
+
+# left up button group compose of four buttons,  Run New, Run From Checkpoint, Tournament, Setting
+_left_up_button_group = dbc.Row(
+    [
+        dcc.Link(dbc.Button("Run New", id="run_new", outline=True, color="secondary", className="mr-1"), href="/run_new"),
+        dcc.Link(dbc.Button("Run From Checkpoint", outline=True, color="secondary", className="mr-1"), href="/checkpoint"),
+        dcc.Link(dbc.Button("Tournament", outline=True, color="secondary", className="mr-1"), href="/tournament"),
+        dcc.Link(dbc.Button("Setting", outline=True, color="secondary", className="mr-1"), href="/setting"),
+    ],
+                    
+)
+
+_new_checkpoint = dbc.Row(
+    [
+        dcc.Link(dbc.Button("Save Checkpoint", id="save_checkpoint", outline=True, color="secondary", className="mr-1"), href="/save_newCheckpoint"),
+    ]
+)
+
+# control bar
+_right_up_group_runnable_component = dbc.Row(                         
+    [
+        dbc.Col(
+            [
+                dbc.Progress(id="progress", value=0, striped=True, animated=True),
+                dcc.Interval(id="interval", interval=250, n_intervals=0),
+                html.I(id="step_backward", n_clicks=0, className='fa fa-step-backward fa-lg'),
+                html.I(id="play", n_clicks=0, className='fa fa-play'),
+                html.I(id="step_forward", n_clicks=0, className='fa fa-step-forward')
+            ]
+        ),
+        dbc.Col(
+            [
+                dbc.Button('test'),
+            ]
+        ),
+    ]
+)
+
+_back_to_parent = dbc.Row(
+    dcc.Link(dbc.Button("back_to_parent", id="back_to_parent", outline=True, color="secondary", className="mr-1"), href="/backToParent"),
+)
+
 
 main_entry_layout = html.Div([navbar, main_entry_body], style={"width": "100%"})

@@ -18,6 +18,7 @@ from negmas.gui.runnable_viewer.layout import layout
 from negmas.gui.utils import render
 # cache used for cache expensive computate
 from negmas.gui import cache
+from negmas.gui.settings import DEBUG
 
 def parse_contents(contents, filename, date) -> Dict:
     content_type, content_string = contents.split(',')
@@ -82,7 +83,7 @@ def run_callback(n_clicks, run_option, config_contents, filename, date):
 
     try:
         run_callback.runner_visualizer.object.run()
-        run_callback.checkpointrunner.run()
+        # run_callback.checkpointrunner.run()
     
     except Exception as e:
         print(f"Running Callback failure: {e} !")
@@ -158,14 +159,90 @@ def update_page_default_layout(n, session_id):
 
 #TODO: control bar callback functions
 
-def control_stop_start():
-    pass 
+@app.callback(
+    Output('control-info-stop-start-error', 'is_open'),
+    [
+        Input('negmas-play', 'n_clicks')
+    ]
+)
+def control_stop_start(n_clicks):
+    """
+    Contorl the negmas running
+    """
+    
+    # first check wether exist a runnable object in run_callback
+    if hasattr(run_callback, 'runner_visualizer'):
+        # if exist a runnable obejct, then check this object is runnning or not
+        if run_callback.runner_visualizer.obejct.running:    
+            # stop this runnable object ,set the _running property as False 
+            run_callback.runner_visualizer.object._running, run_callback.runner_visualizer.object._timedout = False, True
+            run_callback.runner_visualizer.object.on_negotiation_end()
+        else:
+            # TODO: then resume this object and run again????     
+            run_callback.runner_visualizer.object = run_callback.checkpointrunner.loaded_object
+            run_callback.runner_visualizer.object.run()
+    else:
+        # open the control-info error alert, later use timecounter redirct to first page (select runnable object)
+        return True
 
-def control_next_step():
-    pass
+@app.callback(
+    Output('control-info-next-step-error', 'is_open'),
+    [
+        Input('negmas-step-forward', 'n_clicks')
+    ]
+)
+def control_next_step(n_clicks):
+    """
+    Contorl the negmas step
+    """
+    if hasattr(run_callback, 'checkpointrunner'):
+        try:
+            run_callback.checkpointrunner.next_step
+        except Exception as e:
+            if DEBUG:
+                raise(f"Something wrong when goto next step: {e}")
+            else:
+                return True
+    else:
+        return True
 
-def control_previous_step():
-    pass 
+@app.callback(
+    Output('control-info-previous-step-error', "is_open"),
+    [
+        Input('negmas-step-backward', 'n_clicks')
+    ]
+)
+def control_previous_step(n_clicks):
+    """
+    Contorl the negmas step
+    """
+    
+    # if exist runn_callback.checkpointerrunner, then can control the obejct goto previous step
+    if hasattr(run_callback, 'checkpointrunner'):
+        try:
+            run_callback.checkpointrunner.previous_step
+        except Exception as e:
+            if DEBUG:
+                raise(f"Something wrong when goto previous step: {e}")
+            else:
+                return True
+    else:
+        return True
 
-
+@app.callback(
+    Output('url', 'pathname'),
+    [
+        Input('control-info-next-step-error', 'is_open'),
+        Input('control-info-previous-step-error', 'is_open'),
+        Input('control-info-stop-start-error', 'is_open'),
+    ]
+)
+def redirct_to(cins_is_open, cips_is_open, ciss_is_open):
+    """
+    control redirct mode
+    """
+    if cins_is_open or cips_is_open or ciss_is_open:
+        return '/'
+    else:
+        return '/run'
 

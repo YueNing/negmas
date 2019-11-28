@@ -8,6 +8,9 @@ import dash_html_components as html
 import dash_bootstrap_components as dbc
 from negmas.gui.layout_style import DEFAULT_LAYOUT
 
+# DEBUG Mode
+DEBUG = True
+
 # Default System Setting
 LAYOUT_PARAMS = {
     "left":{"size": 4, "offset": 1},

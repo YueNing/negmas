@@ -3,14 +3,14 @@ import dash
 import dash_bootstrap_components as dbc
 import dash_html_components as html
 import dash_core_components as dcc
+import dash_daq as daq 
 import uuid
 from dash.dependencies import Input, Output, State
 from flask_caching import Cache
 from negmas.gui.runnable_viewer.layout import layout as runnable_viewer_layout
 from negmas import Mechanism
-from negmas.gui.settings import RUNNABLES, CACHE_CONFIG, UPDATE_INTERVAL
+from negmas.gui.settings import *
 from negmas.helpers import get_full_type_name, instantiate, get_class
-
 # from named_viewer.layout import layout as named_viewer_layout
 from negmas.gui.runnable_viewer.layout import layout as runnable_view_layout
 
@@ -216,28 +216,79 @@ _new_checkpoint = dbc.Row(
 )
 
 # control bar
-_right_up_group_runnable_component = dbc.Row(                         
+
+# _right_up_group_runnable_component = dbc.Row(                         
+#     [
+#         dbc.Col(
+#             [
+#                 dbc.Progress(id="progress", value=0, striped=True, animated=True),
+#                 dcc.Interval(id="interval", interval=250, n_intervals=0),
+#                 html.I(id="step_backward", n_clicks=0, className='fa fa-step-backward fa-lg'),
+#                 html.I(id="play", n_clicks=0, className='fa fa-play'),
+#                 html.I(id="step_forward", n_clicks=0, className='fa fa-step-forward')
+#             ]
+#         ),
+#         dbc.Col(
+#             [
+#                 dbc.Button('test'),
+#             ]
+#         ),
+#     ]
+# )
+
+_right_up_group_runnable_component = dbc.Row(
     [
         dbc.Col(
             [
-                dbc.Progress(id="progress", value=0, striped=True, animated=True),
-                dcc.Interval(id="interval", interval=250, n_intervals=0),
-                html.I(id="step_backward", n_clicks=0, className='fa fa-step-backward fa-lg'),
-                html.I(id="play", n_clicks=0, className='fa fa-play'),
-                html.I(id="step_forward", n_clicks=0, className='fa fa-step-forward')
+                daq.GraduatedBar(id="negmas-progress", max=100, value=0),
+                html.I(id="negmas-step-backward", n_clicks=0, className='fa fa-step-backward fa-lg'),
+                html.I(id="negmas-play", n_clicks=0, className='fa fa-play'),
+                html.I(id="negmas-step-forward", n_clicks=0, className='fa fa-step-forward'),
+                daq.NumericInput(
+                    id='negmas-step',
+                    min=0,
+                    value=0,
+                    max=MAX_STEP,
+                ),
             ]
         ),
         dbc.Col(
             [
-                dbc.Button('test'),
+                dbc.Label("Checkpoint every"),
+                daq.NumericInput(
+                    id='negmas-checkpoint-every',
+                    min=1,
+                    value=1,
+                    max=MAX_CHECKPOINT_EVERY,
+                ),
+                dbc.Checkbox(
+                    id="negmas-copy-checkpoints"
+                ),
+                dbc.Label("Copy Checkpoints"),
+                dbc.Button(
+                    "Fork", 
+                    id="negmas-fork", 
+                    color="secondary", 
+                    className="mr-1"
+                ),
             ]
         ),
+        dbc.Col(
+            [
+                dbc.Label("n. Widgets"),
+                daq.NumericInput(
+                    id='negmas-number-widgets',
+                    min=1,
+                    value=4,
+                    max=MAX_NUMBER_WIDGETS,
+                ),
+            ]
+        )
     ]
 )
 
 _back_to_parent = dbc.Row(
     dcc.Link(dbc.Button("back_to_parent", id="back_to_parent", outline=True, color="secondary", className="mr-1"), href="/backToParent"),
 )
-
 
 main_entry_layout = html.Div([navbar, main_entry_body], style={"width": "100%"})

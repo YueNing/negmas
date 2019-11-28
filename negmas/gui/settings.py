@@ -44,3 +44,8 @@ CACHE_CONFIG = {
     # higher numbers will store more data in the filesystem / redis cache
     'CACHE_THRESHOLD': 200
 }
+
+# showed in runnable page 
+MAX_STEP = 100
+MAX_CHECKPOINT_EVERY = 10
+MAX_NUMBER_WIDGETS = 4

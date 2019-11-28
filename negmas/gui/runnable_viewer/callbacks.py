@@ -56,6 +56,8 @@ def run_callback(n_clicks, run_option, config_contents, filename, date):
     param run_callback.layout:
     param run_callback.checkpointrunner:
     param run_callback.runner_visualizer:
+
+    Note: run_callback.checkpointrunner.loaded_object === run_callback.runner_visualizer.object
     """
 
     print('====================Debug Information for run_callback===========================================')
@@ -67,8 +69,14 @@ def run_callback(n_clicks, run_option, config_contents, filename, date):
     # get the runner instance
     runner: Optional[SAOMechanism, SCMLWorld] = get_class(run_option)(**run_config)
     
+    try:
+        # run the exactly runner, will create a folder
+        runner.run()
+    except Exception as e:
+        raise(f"Something Wrong when running the runner: {e}")
+    
     # use attribute checkpointrunner of run_callback, step_by_step to check the result 
-    run_callback.checkpointrunner = CheckpointRunner(folder=runner.checkpoint_folder)
+    run_callback.checkpointrunner = CheckpointRunner(folder=runner._CheckpointMixin__checkpoint_folder)
     
     # set the predefined layout base on the checkpointrunner instance
     run_callback.layout = layout(type(run_callback.checkpointrunner.loaded_object))
@@ -100,12 +108,12 @@ def config_file_callback(filename):
 
 
 
-def get_dataframe(session_id):
+def get_dataframe(n, session_id):
     """
     Use flask_caching.Cache base on session_id to calculate the visualizer data and store it
     """
-    @cache.memoize(timeout=1)
-    def query_and_serialize_data(session_id):
+    @cache.memoize()
+    def query_and_serialize_data(n, session_id):
         # just widgets basic_info, childrens, graphs needed to update
         dataframe = {
             'graphs':[], 
@@ -124,7 +132,7 @@ def get_dataframe(session_id):
                 dataframe[widget_name] = render(run_callback.runner_visualizer.render_widget(widget_name))
         return dataframe
     
-    return query_and_serialize_data(session_id)
+    return query_and_serialize_data(n, session_id)
 
 @app.callback(
     [
@@ -144,8 +152,11 @@ def update_page_default_layout(n, session_id):
     """
     Update entire page at once
     """
+
+    # TODO: if session_id is changed, redirct to page /, means for another user
+
     # get data frame from cache, format is dict
-    df = get_dataframe(session_id)
+    df = get_dataframe(n, session_id)
 
     if len(df['graphs']) > 4:
         show_graphs = df['graphs'][:4]
@@ -197,7 +208,8 @@ def control_next_step(n_clicks):
     """
     if hasattr(run_callback, 'checkpointrunner'):
         try:
-            run_callback.checkpointrunner.next_step
+            next_step = run_callback.checkpointrunner.next_step
+            run_callback.checkpointerrunner.goto(next_step)
         except Exception as e:
             if DEBUG:
                 raise(f"Something wrong when goto next step: {e}")
@@ -220,7 +232,8 @@ def control_previous_step(n_clicks):
     # if exist runn_callback.checkpointerrunner, then can control the obejct goto previous step
     if hasattr(run_callback, 'checkpointrunner'):
         try:
-            run_callback.checkpointrunner.previous_step
+            previous_step = run_callback.checkpointrunner.previous_step
+            run_callback.checkpointerrunner.goto(previous_step)
         except Exception as e:
             if DEBUG:
                 raise(f"Something wrong when goto previous step: {e}")

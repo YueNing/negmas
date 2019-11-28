@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 from typing import List, Type, Dict, Any, Optional, Union
 
-from negmas import Mechanism, NamedObject, Agent
+from negmas import Mechanism, NamedObject, Agent, SAOMechanism
 from negmas.helpers import get_full_type_name, instantiate, get_class
 import uuid
 
@@ -282,3 +282,4 @@ class WorldVisualizer(Visualizer):
 
 # register builtin visualizers
 register_visualizer(Mechanism, MechanismVisualizer)
+register_visualizer(SAOMechanism, MechanismVisualizer)

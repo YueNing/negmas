@@ -2,18 +2,20 @@ import dash_core_components as dcc
 import dash_bootstrap_components as dbc
 import dash_html_components as html
 from negmas.gui.settings import LAYOUT_PARAMS
-from negmas.gui import (
-                    _left_up_button_group, 
-                    _right_up_group_runnable_component, 
-                    _new_checkpoint, 
-                    _back_to_parent, 
-                    _interval_one_second
-                )
+from negmas.gui.layouts.widget_layout import (
+    _left_up_button_group,
+    _new_checkpoint,
+    _right_up_group_runnable_component,
+    _interval_one_second,
+    navbar,
+    main_entry_body
+)
 
 # DEFAULT_LAYOUT   described as following
 # | button group   | control_bar |
 # | basic_info     | graphs row1 |
 # | new_checkpoint | graphs row2 |
+# Used For Runnable object pages
 
 DEFAULT_LAYOUT =  html.Div(
         id='DEFAULT_LAYOUT',
@@ -56,3 +58,6 @@ DEFAULT_LAYOUT =  html.Div(
             _interval_one_second
         ],
     )
+
+# Used for entry page, home page '/'
+MAIN_LAYOUT = html.Div([navbar, main_entry_body], style={"width": "100%"})

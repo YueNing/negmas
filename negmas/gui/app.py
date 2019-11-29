@@ -11,8 +11,8 @@ from typing import Type
 from negmas import NamedObject
 # from negmas.visualizers import *
 
-from negmas.gui import app, main_entry_layout, serve_layout
-from negmas.gui.settings import cache_config
+from negmas.gui import app, serve_layout
+from negmas.gui.settings import CACHE_CONFIG, HOME_PAGE
 
 # from named_viewer.callbacks import callbacks as named_viewer_callbacks
 from negmas.gui.runnable_viewer.callbacks import run_callback, config_file_callback
@@ -24,7 +24,7 @@ from negmas.gui.runnable_viewer.callbacks import run_callback, config_file_callb
 def display_page(pathname):
     """ routing """
     if pathname ==  '/':
-        return main_entry_layout
+        return HOME_PAGE
     if pathname == '/load':
         return
     if pathname == '/run':

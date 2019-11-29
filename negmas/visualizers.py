@@ -6,6 +6,7 @@ from typing import List, Type, Dict, Any, Optional, Union
 from negmas import Mechanism, NamedObject, Agent, SAOMechanism
 from negmas.helpers import get_full_type_name, instantiate, get_class
 import uuid
+import pandas as pd
 
 __all__ = [
     "Visualizer", "MechanismVisualizer", "register_visualizer", "visualizer", "visualizer_type", "visualizer_type_name", "Widget"
@@ -51,10 +52,18 @@ class Visualizer(ABC):
         if self.object is None:
             return None
         if name == "basic_info":
-            return Widget(self.widget_kind(name), content=dict(name=self.object.name, id=self.object.id)
+            return Widget(self.widget_kind(name), 
+                            content=dict(
+                                name=self.object.name, 
+                                id=self.object.id, 
+                                type=get_full_type_name(type(self.object)),
+                            )
                           , params=params)
         if name == "children":
-            return {k: [_.visualizer.render_widget("basic_info").content for _ in v] for k, v in self.children.items()}
+            # format {k: [Widget, Widget, Widget]} just contain the basic info, when 
+            return {k: [visualizer(_).render_widget("basic_info") for _ in v] for k, v in self.children.items()}
+
+
         return dict()
 
     @property
@@ -197,11 +206,25 @@ class MechanismVisualizer(Visualizer):
             # offer_utils = self.object.offer_utils
             # realistic data come from self.object, need to analyse this object
             # self.object also running in the class CheckpointRunner
-            offer_utils = []
+            history = pd.DataFrame(data=[_.__dict__ for _ in self.object.history])
+            has_history = len(history) > 0
+            if has_history:
+                history = history.loc[~history.current_offer.isnull(), :]
+            ufuns = self.object._get_ufuns()
+
+            # format as following, utils value of current_offer
+            # (1, 0.5, 1) 0 step 1.agent, 2.agent, 3.agent 
+            # (1, 0.5, 1) 1 step
+            # (1, 0.5, 1) 2 step
+            offer_utils = [tuple(f(o) for f in ufuns) for o in history.current_offer]
 
             return Widget(
                 kind=self.widget_kind(name), 
-                content=dict(id=f('{self.object.id}_{name}'), name=name, data=offer_utils), 
+                content=dict(
+                        id=(f'{get_full_type_name(type(self.object))}_{name}'), 
+                        name=name, 
+                        data=offer_utils
+                    ), 
                 params=params)
         else:
             return super().render_widget(name, params)
@@ -271,15 +294,52 @@ class WorldVisualizer(Visualizer):
 
     @property
     def children(self) -> Dict[str, List[NamedObject]]:
-        pass
+        # TODO:
+        world = self.object
+        return {
+            "factories": world.factories
+        }
 
     @classmethod
     def children_categories(cls) -> List[str]:
         pass
 
 
+class SAOMechanismVisualizer(MechanismVisualizer):
+    """ Visualizes a SAOMechanism"""
+
+
+    @classmethod
+    def widget_kind(cls, widget_name: str) -> str:
+        return super().widget_kind(widget_name)
+
+    @classmethod
+    def widget_names(cls) -> List[str]:
+        return super().widget_names()
+
+    @classmethod
+    def widget_params(cls, widget_name: str) -> Dict[str, Type]:
+        return super().widget_params(widget_name)
+
+    def render_widget(self, name: str, params: Dict[str, Any] = None) -> Optional[Widget]:
+        return super().render_widget(name, params)
+
+    @classmethod
+    def default_widget_name(cls) -> str:
+        return super().default_widget_name()
+
+    @property
+    def children(self) -> Dict[str, List[NamedObject]]:
+        pass
+
+    @classmethod
+    def children_categories(cls) -> List[str]:
+        pass
+    
+
+
 
 
 # register builtin visualizers
 register_visualizer(Mechanism, MechanismVisualizer)
-register_visualizer(SAOMechanism, MechanismVisualizer)
+register_visualizer(SAOMechanism, SAOMechanismVisualizer)

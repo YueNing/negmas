@@ -1,7 +1,7 @@
 """
 Define all widgets layout here
 """
-
+import dash_daq as daq
 from negmas.gui.settings import *
 
 _interval_one_second = dcc.Interval(

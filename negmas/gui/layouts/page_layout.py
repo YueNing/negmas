@@ -11,13 +11,16 @@ from negmas.gui.layouts.widget_layout import (
     main_entry_body
 )
 
+# Used for entry page, home page '/'
+MAIN_LAYOUT = html.Div([navbar, main_entry_body], style={"width": "100%"})
+
 # DEFAULT_LAYOUT   described as following
 # | button group   | control_bar |
 # | basic_info     | graphs row1 |
 # | new_checkpoint | graphs row2 |
 # Used For Runnable object pages
 
-DEFAULT_LAYOUT =  html.Div(
+DEFAULT_LAYOUT_RUNNABLE =  html.Div(
         id='DEFAULT_LAYOUT',
         children=[
             dbc.Row(
@@ -59,5 +62,5 @@ DEFAULT_LAYOUT =  html.Div(
         ],
     )
 
-# Used for entry page, home page '/'
-MAIN_LAYOUT = html.Div([navbar, main_entry_body], style={"width": "100%"})
+
+DEFAULT_LAYOUT_NAMED = html.Div()

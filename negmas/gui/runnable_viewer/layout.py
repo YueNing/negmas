@@ -6,7 +6,6 @@ from typing import Type
 
 def layout(object_type: Type[NamedObject]):
     """
-    TODO: 
     Predefine the layout structure
     do not contain the data
     live update when call run_callback function,
@@ -20,4 +19,4 @@ def layout(object_type: Type[NamedObject]):
     if type_name in LAYOUTS:
         return LAYOUTS[type_name]
     
-    return LAYOUTS['default_layout']
+    return LAYOUTS['default_runnable_layout']

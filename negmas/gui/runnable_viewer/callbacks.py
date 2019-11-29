@@ -12,13 +12,13 @@ from negmas.sao import SAOMechanism
 from negmas.apps.scml import SCMLWorld
 from negmas.visualizers import VISUALIZERS, visualizer
 from negmas.helpers import get_full_type_name, instantiate, get_class
-from typing import Optional
+from typing import Optional, Union
 
 from negmas.gui.runnable_viewer.layout import layout
 from negmas.gui.utils import render
 # cache used for cache expensive computate
 from negmas.gui import cache
-from negmas.gui.settings import DEBUG
+from negmas.gui.settings import DEBUG, DEFAULT_RUNNABLE_PARAMS
 
 def parse_contents(contents, filename, date) -> Dict:
     content_type, content_string = contents.split(',')
@@ -30,7 +30,8 @@ def parse_contents(contents, filename, date) -> Dict:
             # Assume that the user uploaded an json file
             configs = json.loads(decoded)
     except Exception as e:
-        print(e)
+        if DEBUG:
+            print(e)
         return html.Div([
             'There was an error processing this file.'
         ])
@@ -62,22 +63,58 @@ def run_callback(n_clicks, run_option, config_contents, filename, date):
 
     print('====================Debug Information for run_callback===========================================')
     print(f'n_clciks: {n_clicks}, run_option: {run_option}, filename: {filename} !!')
-
-    # get config from json file
-    run_config = parse_contents(config_contents, filename, date)
     
+    # Need to pre analyse the config, defined in json file
+    def _pre_check_config(run_option, run_config: dict):
+        if run_option == "negmas.sao.SAOMechanism":
+            if 'negotiators' in run_config:
+                negotiators = run_config.get('negotiators', None)
+                del run_config['negotiators']
+            if 'mapping_utility_function' in run_config:
+                mapping_utility_function = run_config.get("mapping_utility_function", None)
+                del run_config['mapping_utility_function']
+            return run_config, negotiators, mapping_utility_function
+
+    if filename is not None:
+    # get config from json file
+        run_config = parse_contents(config_contents, filename, date)
+        config, negotiators, mapping_utility_function = _pre_check_config(run_option, run_config)
+
+    else:
+        try:
+            run_config = DEFAULT_RUNNABLE_PARAMS[run_option]
+            config, negotiators, mapping_utility_function = _pre_check_config(run_option, run_config)
+        except Exception as e:
+            if DEBUG:
+                print(f"Can not get Default config of {run_option}, Please add Default Config in file settings")
+            return '/'
+            
     # get the runner instance
-    runner: Optional[SAOMechanism, SCMLWorld] = get_class(run_option)(**run_config)
+    try:
+        # TODO: get the runnable object ,later need to config something, 
+        # for example add Negotiators into Mechanism
+        if run_option == 'negmas.sao.SAOMechanism':
+            runner = get_class(run_option)(**config)
+            ufuns = mapping_utility_function.generate_random(len(negotiators), run_config['outcomes'])
+            for i, negotiator in enumerate(negotiators):
+                runner.add(negotiator(name=f"agent{i}"), ufun=ufuns[i])
+    except Exception as e:
+        if DEBUG:
+            print(f"Can not get runner instance!: {e}")
+        return "/"
     
     try:
         # run the exactly runner, will create a folder
         runner.run()
     except Exception as e:
-        raise(f"Something Wrong when running the runner: {e}")
+        if DEBUG:
+            print(f"Something Wrong when running the runner: {e}")
+        return '/'
     
     # use attribute checkpointrunner of run_callback, step_by_step to check the result 
     run_callback.checkpointrunner = CheckpointRunner(folder=runner._CheckpointMixin__checkpoint_folder)
-    
+    run_callback.checkpointrunner.step()
+
     # set the predefined layout base on the checkpointrunner instance
     run_callback.layout = layout(type(run_callback.checkpointrunner.loaded_object))
 
@@ -94,10 +131,13 @@ def run_callback(n_clicks, run_option, config_contents, filename, date):
         # run_callback.checkpointrunner.run()
     
     except Exception as e:
-        print(f"Running Callback failure: {e} !")
+        if DEBUG:
+            print(f"Running Callback failure: {e} !")
+        return '/'
     
     print("==========================End Debug Information===================================================")
     return '/run'
+
 
 @app.callback(Output('new-config-path', 'children'), [Input('new-config-path', 'filename')])
 def config_file_callback(filename):
@@ -242,20 +282,22 @@ def control_previous_step(n_clicks):
     else:
         return True
 
-@app.callback(
-    Output('url', 'pathname'),
-    [
-        Input('control-info-next-step-error', 'is_open'),
-        Input('control-info-previous-step-error', 'is_open'),
-        Input('control-info-stop-start-error', 'is_open'),
-    ]
-)
-def redirct_to(cins_is_open, cips_is_open, ciss_is_open):
-    """
-    control redirct mode
-    """
-    if cins_is_open or cips_is_open or ciss_is_open:
-        return '/'
-    else:
-        return '/run'
+# @app.callback(
+#     Output('url', 'pathname'),
+#     [
+#         Input('control-info-next-step-error', 'is_open'),
+#         Input('control-info-previous-step-error', 'is_open'),
+#         Input('control-info-stop-start-error', 'is_open'),
+#     ]
+# )
+# def redirct_to(cins_is_open, cips_is_open, ciss_is_open):
+#     """
+#     control redirct mode
+#     """
+#     import time
+#     time.sleep(3)
+#     if cins_is_open or cips_is_open or ciss_is_open:
+#         return '/', False, False, False
+#     else:
+#         return '/run', False, False, False
 

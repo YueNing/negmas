@@ -30,6 +30,7 @@ def serve_layout():
     # Get all runnable object layouts
     runnable_layouts: List = [runnable_viewer_layout(get_class(runnable)) for runnable in RUNNABLES]
 
+    # import pdb;pdb.set_trace()
     # TODO: Get all named object layouts
     named_layouts: List = [named_viewer_layout(get_class(named)) for named in NAMED] 
     
@@ -41,3 +42,5 @@ def serve_layout():
         base,
         HOME_PAGE,
     ] + runnable_layouts + named_layouts)
+
+app.layout = serve_layout

@@ -10,9 +10,19 @@ _interval_one_second = dcc.Interval(
     n_intervals=0
 )
 
+
+# error indicator 
+control_info_stop_start_error = dbc.Alert("Can not Stop/Start !", id="control-info-stop-start-error", dismissable=True, is_open=False)
+control_info_previous_step_error = dbc.Alert("Can not goto previous step ! ", id="control-info-previous-step-error", dismissable=True, is_open=False)
+control_info_next_step_error = dbc.Alert("Can not goto next step ! ", id="control-info-next-step-error", dismissable=True, is_open=False)
+
+# base container
 base = html.Div(
     [
         dcc.Location(id='url', refresh=False),
+        html.Div(
+            [control_info_stop_start_error, control_info_previous_step_error, control_info_next_step_error]
+        ),
         html.Div(
             id='page-content'
         ),
@@ -48,7 +58,8 @@ run_online = dbc.Card(
                 options=[
                     {'label': 'SCMLWorld', 'value': 'negmas.apps.scml.SCMLWorld'},
                     {'label': 'World', 'value': 'negmas.situated.World'},
-                    {'label': 'Negotiation', 'value': 'negmas.mechanisms.Mechanism'},
+                    {'label': 'Mechanism', 'value': 'negmas.mechanisms.Mechanism'},
+                    {'label': 'SAOMechanism', 'value': 'negmas.sao.SAOMechanism'},
                 ],
                 value='negmas.apps.scml.SCMLWorld',
                 id="run_option",

@@ -3,11 +3,12 @@ import dash_bootstrap_components as dbc
 import dash_html_components as html
 import plotly
 
-from typing import Optional, List
+from typing import Union, List
 from negmas.visualizers import Widget
 
-def render(widget: Optional[str, Widget]) -> List[str]:
+def render(widget: Union[str, Widget]) -> List[str]:
     """
+    TODO:
     Render all widget content here, convert Widget to html
     return are widget name and rendered widget html content.
     """

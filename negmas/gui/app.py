@@ -8,11 +8,14 @@ import dash_table as tbl
 import dash_daq as daq
 from typing import Type
 
+import sys
+sys.path.insert(0,'Z:\\negmas')
+
 from negmas import NamedObject
 # from negmas.visualizers import *
 
-from negmas.gui import app, serve_layout
-from negmas.gui.settings import CACHE_CONFIG, HOME_PAGE
+from negmas.gui import app
+from negmas.gui.settings import CACHE_CONFIG, HOME_PAGE, DEBUG
 
 # from named_viewer.callbacks import callbacks as named_viewer_callbacks
 from negmas.gui.runnable_viewer.callbacks import run_callback, config_file_callback
@@ -35,12 +38,12 @@ def display_page(pathname):
 
 def cli(debug=True):
     """Main entry point"""
-    app.layout = serve_layout
     app.run_server(debug=debug)
 
 
 if __name__ == "__main__":
-    debug = False
     if len(sys.argv) > 1 and sys.argv[1] in ("debug", "--debug", "-d"):
         debug=True
+    else:
+        debug = DEBUG
     cli(debug=debug)

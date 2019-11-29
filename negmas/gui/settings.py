@@ -44,6 +44,31 @@ RUNNABLES = [
     'negmas.sao.SAOMechanism',
     'negmas.mechanisms.Mechanism'
 ]
+
+# Default configuration for runnable object
+from pathlib import Path
+from negmas.helpers import unique_name
+from negmas import SAOMechanism, MappingUtilityFunction, AspirationNegotiator
+
+tmp_path = Path("./tmp")
+new_folder: Path = tmp_path / unique_name("empty", sep="")
+
+DEFAULT_RUNNABLE_PARAMS = {
+    "negmas.sao.SAOMechanism": {
+        "outcomes": 10,
+        "n_steps": 100,
+        "offering_is_accepting": True,
+        "avoid_ultimatum": False,
+        "checkpoint_every": 2,
+        "checkpoint_folder": new_folder,
+        "checkpoint_filename": "SAOMechanism",
+        "extra_checkpoint_info": None,
+        "exist_ok": True,
+        "single_checkpoint": False,
+        "negotiators": [AspirationNegotiator, AspirationNegotiator, AspirationNegotiator],
+        "mapping_utility_function": MappingUtilityFunction
+    },
+}
 # Named object
 NAMED = [
     'negmas.negotiators.Negotiator',
@@ -74,6 +99,7 @@ LAYOUTS = {
     'negmas.negotiators.RankerWithWeightsNegotiator': DEFAULT_LAYOUT_NAMED,
     'negmas.negotiators.SorterNegotiator': DEFAULT_LAYOUT_NAMED,
 }
+
 
 # Setting for cache 
 CACHE_CONFIG = {

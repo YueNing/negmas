@@ -1,11 +1,13 @@
 import dash_core_components as dcc 
 import dash_bootstrap_components as dbc 
 import dash_html_components as html
+from dash.dependencies import Input, Output, State, Event
 import plotly
 
 from typing import Union, List
 from negmas.visualizers import Widget
 from negmas.gui import app
+import sys
 
 def render(widget:Widget) -> List[Union[dcc, dbc, html]]:
     """
@@ -54,6 +56,7 @@ def render(widget:Widget) -> List[Union[dcc, dbc, html]]:
                 ]
 
                 sub_menus += sub_menu
+            # set the component layout, need to later register relative callback function
             return [
                 dbc.Nav(sub_menus, vertical=True)
             ]
@@ -84,3 +87,56 @@ def render(widget:Widget) -> List[Union[dcc, dbc, html]]:
             )
 
             return figure
+
+# TODO:
+# dynamically creating callbacks for a dynamically created layout
+def create_callback(output_element,retfunc,name='callback'):
+    """creates a callback function"""
+    def callback(*input_values):
+        print ('callback fired with :"{}"  output:{}/{}'.format(input_values,output_element.component_id,output_element.component_property ))
+        retval = []
+        if input_values is not None and input_values!='None':
+            try:
+                retval = retfunc(*input_values)
+            except Exception as e:
+                print(f"error when create callback function params are {*input_values} error is {e}")  
+        return retval                    
+    return callback
+
+def getComponentId(name):
+    return f"negmas-{name}"
+
+def register_callback(callbacks):
+    """register callback for app callback"""
+    print(f"registering {len(callbacks)} callbacks for APP")
+    
+    for callback_data in callbacks:
+        dynamically_generated_function = create_callback(callback_data[0], callback_data[4])
+        app.callback(output=callback_data[0], inputs=callback_data[1],state=callback_data[2],events=callback_data[3])(dynamically_generated_function)
+
+def define_callback(output, input, func=None, state=None, event=None):
+    """Defines the callback set"""
+    return (
+        [Output(getComponentId(id), attr) for (id, attr) in output],
+        [Input(getComponentId(id), attr) for (id,attr) in input],
+        [] if state is None else [State(getComponentId(id), attr) for (id,attr) in state],
+        [] if event is None else [Event(getComponentId(id), attr) for (id,attr) in event],
+        dummy_callback if func is None else func
+    )
+
+def dummy_callback(*input_data):
+    print('dummy callback with:', *input_data)
+    return []
+
+def set_callbacks(components: list):
+    """set callbacks for the app, 
+    input components: [{"outputs":[], "inputs", "func":}, {}, {}, {}]
+    output data: [(Output,[Input],[State],[Event],callback_func), ...]
+    """
+    callbacks = [
+        define_callback(components['output'], components['input'], 
+            func=c['func'], state=c['state'] if 'state' in c else None, event=c['event'] if 'event' in c else None
+        ) for c in components
+    ]
+    # return all predefined callbacks, later just call register_callback when     
+    register_callback(callbacks)

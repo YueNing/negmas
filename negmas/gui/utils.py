@@ -130,7 +130,7 @@ def dummy_callback(*input_data):
 
 def set_callbacks(components: list):
     """set callbacks for the app, 
-    input components: [{"outputs":[], "inputs", "func":}, {}, {}, {}]
+    input components: [{"output":[(),()], "input", "func":}, {}, {}, {}]
     output data: [(Output,[Input],[State],[Event],callback_func), ...]
     """
     callbacks = [

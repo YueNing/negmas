@@ -15,10 +15,13 @@ from negmas.helpers import get_full_type_name, instantiate, get_class
 from typing import Optional, Union
 
 from negmas.gui.runnable_viewer.layout import layout
-from negmas.gui.utils import render
+from negmas.gui.utils import render, set_callbacks
+from negmas.gui.named_viewer.layout import layout
+from negmas.gui.named_viewer.callbacks import *
+
 # cache used for cache expensive computate
 from negmas.gui import cache
-from negmas.gui.settings import DEBUG, DEFAULT_RUNNABLE_PARAMS
+from negmas.gui.settings import DEBUG, DEFAULT_RUNNABLE_PARAMS, DEFAULT_NUMBER_WIDGETS
 
 def parse_contents(contents, filename, date) -> Dict:
     content_type, content_string = contents.split(',')
@@ -169,11 +172,61 @@ def get_dataframe(n, session_id):
                 ))
             else:
                 # put another widget directly in dict dataframe
-                dataframe[widget_name] = render(run_callback.runner_visualizer.render_widget(widget_name))
+                widget = run_callback.runner_visualizer.render_widget(widget_name)
+                dataframe[widget_name] = render(widget)
+
+                if widget_name == 'children':
+                    # set callback function for children component
+                    # subchildren-{m} subchildren-negotiators {'negotiators':[a1, a2], 'consumers':[c1, c2]}
+                    components = []
+                    for m in widget.content:
+                        components.append(
+                            {'func':toggle_collapse, 
+                            'output':[(f'subchildren-{m}-collapse', 'is_open')], 
+                            'input':[(f'subchildren-{m}', 'n_clicks')], 
+                            'state':[(f'subchildren-{m}-collapse', 'is_open')]
+                            }
+                        )
+                        components.append(
+                            {'func':set_navitem_class, 
+                            'output':[(f'subchildren-{m}', 'className')], 
+                            'input':[(f'subchildren-{m}-collapse', 'is_open')]
+                            }
+                        )
+                    
+                    set_callbacks(components)
                 
         return dataframe
     
     return query_and_serialize_data(n, session_id)
+
+def compute_runnable_date(n, session_id):
+    """get new page data"""
+
+    # get data frame from cache, format is dict
+    df = get_dataframe(n, session_id)
+
+    if len(df['graphs']) > DEFAULT_NUMBER_WIDGETS:
+        show_graphs = df['graphs'][:DEFAULT_NUMBER_WIDGETS]
+    else:
+        show_graphs == df['graphs'] + [render('empty')]*(DEFAULT_NUMBER_WIDGETS-len(df['graphs']))
+    
+    result = tuple([df['basic_info'], df['childrens']] + show_graphs)
+    
+    graph_components = [(f'graph{k+1}', 'figure') for k in range(len(result) - 2)]
+
+    components = [
+        {'func':update_runnable_callback, 
+        'output':[('basic_info', 'children'), ('childrens', 'children')] + graph_components, 
+        'input':[('interval-component', 'n_intervals'), ('session_id', 'children')], 
+        }
+    ]
+    set_callbacks(components)
+
+    return result
+
+def update_runnable_callback(*input):
+    pass
 
 @app.callback(
     [
@@ -196,17 +249,9 @@ def update_page_default_layout(n, session_id):
 
     # TODO: if session_id is changed, redirct to page /, means for another user
 
-    # get data frame from cache, format is dict
-    df = get_dataframe(n, session_id)
 
-    if len(df['graphs']) > 4:
-        show_graphs = df['graphs'][:4]
-    else:
-        show_graphs == df['graphs'] + [render('empty')]*(4-len(df['graphs']))
-    
-    result = tuple([df['basic_info'], df['childrens']] + show_graphs)
-
-    return result
+    #TODO: dynamically set callback function here dynamically update the page 
+    compute_runnable_date(n, session_id)
 
 
 #TODO: control bar callback functions

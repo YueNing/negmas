@@ -162,3 +162,6 @@ tests/logs
 .wily
 /**/.wily
 wily-report.html
+
+# vs code setting
+.vscode

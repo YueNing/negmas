@@ -1,7 +1,7 @@
 import dash_core_components as dcc
 import dash_bootstrap_components as dbc
 import dash_html_components as html
-from negmas.gui.settings import LAYOUT_PARAMS
+from negmas.gui.settings import *
 from negmas.gui.layouts.widget_layout import (
     _left_up_button_group,
     _new_checkpoint,
@@ -33,7 +33,7 @@ DEFAULT_LAYOUT_RUNNABLE =  html.Div(
                             html.Br(),
                             html.Div(id="basic_info"),
                             html.Br(),
-                            html.Div(id="childrens"),
+                            html.Div(id="childrens", style=SIDEBAR_STYLE),
                             html.Br(),
                             # [System] save, predefined 
                             _new_checkpoint

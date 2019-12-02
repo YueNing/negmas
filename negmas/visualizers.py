@@ -61,8 +61,11 @@ class Visualizer(ABC):
                           , params=params)
         if name == "children":
             # format {k: [Widget, Widget, Widget]} just contain the basic info, when 
-            return {k: [visualizer(_).render_widget("basic_info") for _ in v] for k, v in self.children.items()}
-
+            return Widget(
+                kind=self.widget_kind(name),
+                content={k: [visualizer(_).render_widget("basic_info").content for _ in v] for k, v in self.children.items()},
+                params=params
+            )
 
         return dict()
 

@@ -170,6 +170,7 @@ def get_dataframe(n, session_id):
             else:
                 # put another widget directly in dict dataframe
                 dataframe[widget_name] = render(run_callback.runner_visualizer.render_widget(widget_name))
+                
         return dataframe
     
     return query_and_serialize_data(n, session_id)

@@ -15,6 +15,18 @@ LAYOUT_PARAMS = {
     "left":{"size": 4, "offset": 1},
     "right":{"size": 8, "layout":{"left":{"scale": 6}, "right":{"scale":6}}}
 }
+
+# Style for Sidebar
+SIDEBAR_STYLE = {
+    "position": "fixed",
+    "top": 0,
+    "left": 0,
+    "bottom": 0,
+    "width": "16rem",
+    "padding": "2rem 1rem",
+    "background-color": "#f8f9fa",
+}
+
 # 'https://codepen.io/chriddyp/pen/bWLwgP.css',
 EXTERNAL_STYLE_SHEETS = [dbc.themes.CERULEAN]
 

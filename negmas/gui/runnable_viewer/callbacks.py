@@ -190,7 +190,7 @@ def set_runnable_dynamically_layout_callback():
     # get data frame from cache, format is dict
     # first time to calculte the dataframe and get the dynamically layout and set callback function
 
-    result = _compute_runnable_data(0, 0)
+    result = _compute_runnable_data(0, 'init')
     graph_components = [(f'graph{k+1}', 'figure') for k in range(len(result) - 2)]
     run_callback.graph_components = graph_components
     run_callback.init_result = result
@@ -326,7 +326,6 @@ def control_previous_step(n_clicks):
     """
     Contorl the negmas step
     """
-    print(n_clicks)
     if not(n_clicks==0):
         # if exist runn_callback.checkpointerrunner, then can control the obejct goto previous step
         if hasattr(run_callback, 'checkpointrunner'):

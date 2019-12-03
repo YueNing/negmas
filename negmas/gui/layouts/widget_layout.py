@@ -3,9 +3,10 @@ Define all widgets layout here
 """
 import dash_daq as daq
 from negmas.gui.settings import *
+import dash_core_components as dcc
 
 _interval_one_second = dcc.Interval(
-    id="interval-component",
+    id="negmas-interval-component",
     interval=UPDATE_INTERVAL*1000, # one second
     n_intervals=0
 )

@@ -143,4 +143,5 @@ def set_callbacks(components: list):
     ]
     # return all predefined callbacks, later just call register_callback when   
     # import pdb;pdb.set_trace()  
+    # return callbacks
     register_callback(callbacks)

@@ -38,7 +38,7 @@ def serve_layout():
     session_id: str = str(uuid.uuid4())
     
     return html.Div([
-        html.Div(session_id, id="session_id", style={'display':'none'}),
+        html.Div(session_id, id="negmas-session_id", style={'display':'none'}),
         base,
         HOME_PAGE,
     ] + runnable_layouts + named_layouts)

@@ -1,7 +1,7 @@
 import dash_core_components as dcc 
 import dash_bootstrap_components as dbc 
 import dash_html_components as html
-from dash.dependencies import Input, Output, State, Event
+from dash.dependencies import Input, Output, State
 import plotly
 
 from typing import Union, List
@@ -9,7 +9,7 @@ from negmas.visualizers import Widget
 from negmas.gui import app
 import sys
 
-def render(widget:Widget) -> List[Union[dcc, dbc, html]]:
+def render(widget: Union[str, Widget]) -> Union[list, dict]:
     """
     TODO:
     Render all widget content here, convert Widget to html
@@ -33,7 +33,6 @@ def render(widget:Widget) -> List[Union[dcc, dbc, html]]:
         elif widget.kind == "dict_list_dict":
             #render for childrens, format {'':[{}, {}, {}], need to set a sidebar not navigate the children
             sub_menus = []
-        
             for m in widget.content:
                 # set the layout component 
                 sub_menu = [
@@ -49,7 +48,7 @@ def render(widget:Widget) -> List[Union[dcc, dbc, html]]:
                         ),
                         id=f"subchildren-{m}"
                     ),
-                    dbc.Collapse([dbc.NavLink(w.name, href=f"/childrens/{m}/{w.name}") 
+                    dbc.Collapse([dbc.NavLink(w['name'], href=f"/childrens/{m}/{w['name']}") 
                                     for w in widget.content[m]],
                                 id=f"subchildren-{m}-collapse"
                                 )
@@ -65,8 +64,8 @@ def render(widget:Widget) -> List[Union[dcc, dbc, html]]:
             # data are the data that need to insert into figure and update
             # widget.content.data [(agent1, agent2, agent3), (agent1, agent2, agent3),....]
             import pandas as pd 
-            df = pd.DataFrame(widget.content.data)
-
+            df = pd.DataFrame(widget.content['data'])
+            # import pdb;pdb.set_trace()
             figure = dict(
                 data = [
                     dict(
@@ -87,6 +86,8 @@ def render(widget:Widget) -> List[Union[dcc, dbc, html]]:
             )
 
             return figure
+    
+    return []
 
 # TODO:
 # dynamically creating callbacks for a dynamically created layout
@@ -99,7 +100,7 @@ def create_callback(output_element,retfunc,name='callback'):
             try:
                 retval = retfunc(*input_values)
             except Exception as e:
-                print(f"error when create callback function params are {*input_values} error is {e}")  
+                print(f"error when create callback function params are {input_values} error is {e}")  
         return retval                    
     return callback
 
@@ -108,19 +109,18 @@ def getComponentId(name):
 
 def register_callback(callbacks):
     """register callback for app callback"""
-    print(f"registering {len(callbacks)} callbacks for APP")
+    print(f"registering {len(callbacks)} callbacks for negmas.gui")
     
     for callback_data in callbacks:
-        dynamically_generated_function = create_callback(callback_data[0], callback_data[4])
-        app.callback(output=callback_data[0], inputs=callback_data[1],state=callback_data[2],events=callback_data[3])(dynamically_generated_function)
+        dynamically_generated_function = create_callback(callback_data[0], callback_data[3])
+        app.callback(output=callback_data[0], inputs=callback_data[1],state=callback_data[2])(dynamically_generated_function)
 
-def define_callback(output, input, func=None, state=None, event=None):
+def define_callback(output, input, func=None, state=None):
     """Defines the callback set"""
     return (
         [Output(getComponentId(id), attr) for (id, attr) in output],
         [Input(getComponentId(id), attr) for (id,attr) in input],
         [] if state is None else [State(getComponentId(id), attr) for (id,attr) in state],
-        [] if event is None else [Event(getComponentId(id), attr) for (id,attr) in event],
         dummy_callback if func is None else func
     )
 
@@ -131,12 +131,14 @@ def dummy_callback(*input_data):
 def set_callbacks(components: list):
     """set callbacks for the app, 
     input components: [{"output":[(),()], "input", "func":}, {}, {}, {}]
-    output data: [(Output,[Input],[State],[Event],callback_func), ...]
+    output data: [(Output,[Input],[State],callback_func), ...]
     """
+    # import pdb;pdb.set_trace()
     callbacks = [
-        define_callback(components['output'], components['input'], 
-            func=c['func'], state=c['state'] if 'state' in c else None, event=c['event'] if 'event' in c else None
+        define_callback(c['output'], c['input'], 
+            func=c['func'], state=c['state'] if 'state' in c else None
         ) for c in components
     ]
-    # return all predefined callbacks, later just call register_callback when     
+    # return all predefined callbacks, later just call register_callback when   
+    # import pdb;pdb.set_trace()  
     register_callback(callbacks)

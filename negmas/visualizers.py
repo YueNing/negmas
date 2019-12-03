@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 from typing import List, Type, Dict, Any, Optional, Union
 
-from negmas import Mechanism, NamedObject, Agent, SAOMechanism
+from negmas import Mechanism, NamedObject, Agent, SAOMechanism, AspirationNegotiator
 from negmas.helpers import get_full_type_name, instantiate, get_class
 import uuid
 import pandas as pd
@@ -61,6 +61,7 @@ class Visualizer(ABC):
                           , params=params)
         if name == "children":
             # format {k: [Widget, Widget, Widget]} just contain the basic info, when 
+            # import pdb;pdb.set_trace()
             return Widget(
                 kind=self.widget_kind(name),
                 content={k: [visualizer(_).render_widget("basic_info").content for _ in v] for k, v in self.children.items()},
@@ -149,11 +150,11 @@ def visualizer_type(x: Union[str, Type[NamedObject], NamedObject]) -> Optional[T
     v = VISUALIZERS.get(type_name, type_name + "Visualizer")
     try:
         return get_class(v)
-    except TypeError:
+    except:
         pass
     try:
         return get_class(v.split(".")[-1])
-    except TypeError:
+    except:
         pass
     return Visualizer
 
@@ -228,7 +229,7 @@ class MechanismVisualizer(Visualizer):
                         name=name, 
                         data=offer_utils
                     ), 
-                params=params)
+                params=params if params is not None else {})
         else:
             return super().render_widget(name, params)
 
@@ -333,7 +334,7 @@ class SAOMechanismVisualizer(MechanismVisualizer):
 
     @property
     def children(self) -> Dict[str, List[NamedObject]]:
-        pass
+        return super().children
 
     @classmethod
     def children_categories(cls) -> List[str]:
@@ -342,7 +343,7 @@ class SAOMechanismVisualizer(MechanismVisualizer):
 
 
 
-
 # register builtin visualizers
 register_visualizer(Mechanism, MechanismVisualizer)
 register_visualizer(SAOMechanism, SAOMechanismVisualizer)
+register_visualizer(AspirationNegotiator, AgentVisualizer)

@@ -129,14 +129,18 @@ def run_callback(n_clicks, run_option, config_contents, filename, date):
         # search a new Visualizer and set object as runner
         run_callback.runner_visualizer = visualizer(run_callback.checkpointrunner.loaded_object)
 
-    try:
-        run_callback.runner_visualizer.object.run()
+    # try:
+    run_callback.runner_visualizer.object.run()
+        # dynamically set the init layout of runnable object
+    set_runnable_dynamically_layout_callback()
+        # import pdb;pdb.set_trace()
+
         # run_callback.checkpointrunner.run()
     
-    except Exception as e:
-        if DEBUG:
-            print(f"Running Callback failure: {e} !")
-        return '/'
+    # except Exception as e:
+    #     if DEBUG:
+    #         print(f"Running Callback failure: {e} !")
+    #     return '/'
     
     print("==========================End Debug Information===================================================")
     return '/run'
@@ -170,6 +174,7 @@ def get_dataframe(n, session_id):
                 dataframe['graphs'].append(render(
                     run_callback.runner_visualizer.render_widget(widget_name)
                 ))
+                
             else:
                 # put another widget directly in dict dataframe
                 widget = run_callback.runner_visualizer.render_widget(widget_name)
@@ -178,41 +183,38 @@ def get_dataframe(n, session_id):
                 if widget_name == 'children':
                     # set callback function for children component
                     # subchildren-{m} subchildren-negotiators {'negotiators':[a1, a2], 'consumers':[c1, c2]}
-                    components = []
-                    for m in widget.content:
-                        components.append(
-                            {'func':toggle_collapse, 
-                            'output':[(f'subchildren-{m}-collapse', 'is_open')], 
-                            'input':[(f'subchildren-{m}', 'n_clicks')], 
-                            'state':[(f'subchildren-{m}-collapse', 'is_open')]
-                            }
-                        )
-                        components.append(
-                            {'func':set_navitem_class, 
-                            'output':[(f'subchildren-{m}', 'className')], 
-                            'input':[(f'subchildren-{m}-collapse', 'is_open')]
-                            }
-                        )
-                    
-                    set_callbacks(components)
+                    try:
+                        components = []
+                        for m in widget.content:
+                            components.append(
+                                {'func':toggle_collapse, 
+                                'output':[(f'subchildren-{m}-collapse', 'is_open')], 
+                                'input':[(f'subchildren-{m}', 'n_clicks')], 
+                                'state':[(f'subchildren-{m}-collapse', 'is_open')]
+                                }
+                            )
+                            components.append(
+                                {'func':set_navitem_class, 
+                                'output':[(f'subchildren-{m}', 'className')], 
+                                'input':[(f'subchildren-{m}-collapse', 'is_open')]
+                                }
+                            )
+                        
+                        set_callbacks(components)
+                    except:
+                        pass
                 
         return dataframe
     
     return query_and_serialize_data(n, session_id)
 
-def compute_runnable_date(n, session_id):
-    """get new page data"""
+def set_runnable_dynamically_layout_callback():
+    """just call once, to set callback function and layout of runnable page"""
 
     # get data frame from cache, format is dict
-    df = get_dataframe(n, session_id)
+    # first time to calculte the dataframe and get the dynamically layout and set callback function
 
-    if len(df['graphs']) > DEFAULT_NUMBER_WIDGETS:
-        show_graphs = df['graphs'][:DEFAULT_NUMBER_WIDGETS]
-    else:
-        show_graphs == df['graphs'] + [render('empty')]*(DEFAULT_NUMBER_WIDGETS-len(df['graphs']))
-    
-    result = tuple([df['basic_info'], df['childrens']] + show_graphs)
-    
+    result = _compute_runnable_data(0, 0)
     graph_components = [(f'graph{k+1}', 'figure') for k in range(len(result) - 2)]
 
     components = [
@@ -221,37 +223,38 @@ def compute_runnable_date(n, session_id):
         'input':[('interval-component', 'n_intervals'), ('session_id', 'children')], 
         }
     ]
+    # import pdb;pdb.set_trace()
     set_callbacks(components)
 
+def _compute_runnable_data(n, session_id):
+    """get new page data"""
+    df = get_dataframe(n, session_id)
+
+    show_graphs = []
+    if len(df['graphs']) > DEFAULT_NUMBER_WIDGETS:
+        show_graphs = df['graphs'][:DEFAULT_NUMBER_WIDGETS]
+    else:
+        show_graphs = df['graphs'] + [render('empty')]*(DEFAULT_NUMBER_WIDGETS-len(df['graphs']))
+    
+    result = tuple([df['basic_info'], df['children']] + show_graphs)
     return result
 
-def update_runnable_callback(*input):
-    pass
+def update_runnable_callback(n, session_id):
+    """exactly callback function of runnable object"""
+    try:
+        return _compute_runnable_data(n, session_id)
+    except:
+        # if callback except error, means the layout and callback function are not successfully init
+        # need to init it and then return the result
+        try:
+            set_runnable_dynamically_layout_callback()
+            return _compute_runnable_data(n, session_id)
+        except:
+            if DEBUG:
+                print(f'error when update the runnable page {e}')
+            else:
+                pass
 
-@app.callback(
-    [
-        Output('basic_info', 'children'),
-        Output('childrens', 'children'),
-        Output('graph1', 'figure'),
-        Output('graph2', 'figure'),
-        Output('graph3', 'figure'),
-        Output('graph4', 'figure')
-    ],
-    [
-        Input('interval-component', 'n_intervals'),
-        Input('session_id', 'children'),
-    ]
-)
-def update_page_default_layout(n, session_id):
-    """
-    Update entire page at once
-    """
-
-    # TODO: if session_id is changed, redirct to page /, means for another user
-
-
-    #TODO: dynamically set callback function here dynamically update the page 
-    compute_runnable_date(n, session_id)
 
 
 #TODO: control bar callback functions

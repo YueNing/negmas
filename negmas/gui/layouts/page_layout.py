@@ -31,9 +31,9 @@ DEFAULT_LAYOUT_RUNNABLE =  html.Div(
                             # [System] control bar, predefined
                             _left_up_button_group,
                             html.Br(),
-                            html.Div(id="basic_info"),
+                            html.Div(id="negmas-basic_info"),
                             html.Br(),
-                            html.Div(id="childrens", style=SIDEBAR_STYLE),
+                            html.Div(id="negmas-children"),
                             html.Br(),
                             # [System] save, predefined 
                             _new_checkpoint
@@ -45,15 +45,7 @@ DEFAULT_LAYOUT_RUNNABLE =  html.Div(
                             html.Br(),
                             _right_up_group_runnable_component,
                             html.Br(),
-                            dbc.Row([
-                                dcc.Graph(id='graph1'),
-                                dcc.Graph(id='graph2'),
-                            ]),
-                            html.Br(),
-                            dbc.Row([
-                                dcc.Graph(id='graph3'),
-                                dcc.Graph(id='graph4'),
-                            ]),
+                            html.Div(id="graphs")
                         ]
                     )
                 ]
@@ -64,3 +56,28 @@ DEFAULT_LAYOUT_RUNNABLE =  html.Div(
 
 
 DEFAULT_LAYOUT_NAMED = html.Div()
+
+
+def set_dynamically_layout(object_set):
+    # now just need to add graphs into this layout
+    # later can search by id
+    # import pdb;pdb.set_trace()
+    # object_set.layout.children[0].children[1].children[3] = html.Div[
+
+    # ]
+    # import pdb;pdb.set_trace()
+    if hasattr(object_set, 'components'):
+        if object_set.layout.children[0].children[1].children[3].id == "graphs":
+            # object_set.graph_components
+            # every row 2 graph
+            step = 2
+            graph_children = [dbc.Row([dbc.Col([dcc.Graph(id=g[0], figure={})]) 
+                                for g in object_set.graph_components[i:i+step]]) 
+                                    for i in range(0,len(object_set.graph_components),step)
+                            ]
+            # import pdb;pdb.set_trace()
+            object_set.layout.children[0].children[1].children[3] = html.Div(graph_children, id="graphs")
+        else:
+            print("please confirm the graphs position in function set_dynamically_layout!")
+    else:
+        print(f"please set attr 'components' into {object_set}")

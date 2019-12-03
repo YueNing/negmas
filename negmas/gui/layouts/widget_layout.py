@@ -177,17 +177,17 @@ main_entry_body = dbc.Container(
 # left up button group compose of four buttons,  Run New, Run From Checkpoint, Tournament, Setting
 _left_up_button_group = dbc.Row(
     [
-        dcc.Link(dbc.Button("Run New", id="run_new", outline=True, color="secondary", className="mr-1"), href="/run_new"),
-        dcc.Link(dbc.Button("Run From Checkpoint", outline=True, color="secondary", className="mr-1"), href="/checkpoint"),
-        dcc.Link(dbc.Button("Tournament", outline=True, color="secondary", className="mr-1"), href="/tournament"),
-        dcc.Link(dbc.Button("Setting", outline=True, color="secondary", className="mr-1"), href="/setting"),
+        dcc.Link(dbc.Button("Run New", id="run_new", color="secondary", className="btn-block"), href="/run_new"),
+        dcc.Link(dbc.Button("Run From Checkpoint", color="secondary", className="btn-block"), href="/checkpoint"),
+        dcc.Link(dbc.Button("Tournament", color="secondary", className="btn-block"), href="/tournament"),
+        dcc.Link(dbc.Button("Setting", color="secondary", className="btn-block"), href="/setting"),
     ],
                     
 )
 
 _new_checkpoint = dbc.Row(
     [
-        dcc.Link(dbc.Button("Save Checkpoint", id="save_checkpoint", outline=True, color="secondary", className="mr-1"), href="/save_newCheckpoint"),
+        dcc.Link(dbc.Button("Save Checkpoint", id="save_checkpoint", color="secondary", className="mr-1"), href="/save_newCheckpoint"),
     ]
 )
 
@@ -264,5 +264,5 @@ _right_up_group_runnable_component = dbc.Row(
 )
 
 _back_to_parent = dbc.Row(
-    dcc.Link(dbc.Button("back_to_parent", id="back_to_parent", outline=True, color="secondary", className="mr-1"), href="/backToParent"),
+    dcc.Link(dbc.Button("back_to_parent", id="back_to_parent", color="secondary", className="mr-1"), href="/backToParent"),
 )

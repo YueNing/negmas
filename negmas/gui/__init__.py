@@ -15,7 +15,7 @@ from typing import List
 
 # initial the dash app
 app = dash.Dash(__name__, external_stylesheets=EXTERNAL_STYLE_SHEETS)
-
+app.config.suppress_callback_exceptions = True
 # set cache config for dash app
 cache = Cache(app.server, config=CACHE_CONFIG)
 

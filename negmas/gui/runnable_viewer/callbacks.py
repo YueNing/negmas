@@ -138,8 +138,7 @@ def run_callback(n_clicks, run_option, config_contents, filename, date):
     # save the layout components
     run_callback.components = set_runnable_dynamically_layout_callback()
     set_dynamically_layout(run_callback)
-    set_callbacks(run_callback.components)
-    
+
     print("==========================End Debug Information===================================================")
     return '/run'
 
@@ -177,31 +176,10 @@ def get_dataframe(n, session_id):
                 # put another widget directly in dict dataframe
                 widget = run_callback.runner_visualizer.render_widget(widget_name)
                 dataframe[widget_name] = render(widget)
-
                 if widget_name == 'children':
-                    # set callback function for children component
-                    # subchildren-{m} subchildren-negotiators {'negotiators':[a1, a2], 'consumers':[c1, c2]}
-                    try:
-                        components = []
-                        for m in widget.content:
-                            components.append(
-                                {'func':toggle_collapse, 
-                                'output':[(f'subchildren-{m}-collapse', 'is_open')], 
-                                'input':[(f'subchildren-{m}', 'n_clicks')], 
-                                'state':[(f'subchildren-{m}-collapse', 'is_open')]
-                                }
-                            )
-                            components.append(
-                                {'func':set_navitem_class, 
-                                'output':[(f'subchildren-{m}', 'className')], 
-                                'input':[(f'subchildren-{m}-collapse', 'is_open')]
-                                }
-                            )
-                        
-                        set_callbacks(components)
-                    except:
-                        pass
-                
+                    # need this widget to setup callback function
+                    run_callback.widget_children = widget
+        
         return dataframe
     
     return query_and_serialize_data(n, session_id)
@@ -215,13 +193,37 @@ def set_runnable_dynamically_layout_callback():
     result = _compute_runnable_data(0, 0)
     graph_components = [(f'graph{k+1}', 'figure') for k in range(len(result) - 2)]
     run_callback.graph_components = graph_components
+    run_callback.init_result = result
+
     components = [
         {'func':update_runnable_callback, 
         'output':[('basic_info', 'children'), ('children', 'children')] + graph_components, 
         'input':[('interval-component', 'n_intervals'), ('session_id', 'children')], 
         }
     ]
+    # set callback function for children component
+    # subchildren-{m} subchildren-negotiators {'negotiators':[a1, a2], 'consumers':[c1, c2]}
     # import pdb;pdb.set_trace()
+    try:
+        for m in run_callback.widget_children.content:
+            components.append(
+                {'func':toggle_collapse, 
+                'output':[(f'subchildren-{m}-collapse', 'is_open')], 
+                'input':[(f'subchildren-{m}', 'n_clicks')], 
+                'state':[(f'subchildren-{m}-collapse', 'is_open')]
+                }
+            )
+            components.append(
+                {'func':set_navitem_class, 
+                'output':[(f'subchildren-{m}', 'className')], 
+                'input':[(f'subchildren-{m}-collapse', 'is_open')]
+                }
+            )
+        
+    except:
+        pass
+    # import pdb;pdb.set_trace()
+    set_callbacks(components)
     return components
     # set_callbacks(components)
 
@@ -240,6 +242,7 @@ def _compute_runnable_data(n, session_id):
 
 def update_runnable_callback(n, session_id):
     """exactly callback function of runnable object"""
+    print("update_runnable_callback")
     try:
         return _compute_runnable_data(n, session_id)
     except:

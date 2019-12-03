@@ -71,7 +71,7 @@ def set_dynamically_layout(object_set):
             # object_set.graph_components
             # every row 2 graph
             step = 2
-            graph_children = [dbc.Row([dbc.Col([dcc.Graph(id=g[0], figure={})]) 
+            graph_children = [dbc.Row([dbc.Col([dcc.Graph(id=g[0], figure=object_set.init_result[2])]) 
                                 for g in object_set.graph_components[i:i+step]]) 
                                     for i in range(0,len(object_set.graph_components),step)
                             ]
@@ -79,5 +79,13 @@ def set_dynamically_layout(object_set):
             object_set.layout.children[0].children[1].children[3] = html.Div(graph_children, id="graphs")
         else:
             print("please confirm the graphs position in function set_dynamically_layout!")
+        
+        if object_set.layout.children[0].children[0].children[3].id == 'negmas-basic_info':
+            object_set.layout.children[0].children[0].children[3] = html.Div(object_set.init_result[0], id="negmas-basic_info")
+        
+        if object_set.layout.children[0].children[0].children[5].id == 'negmas-children':
+            object_set.layout.children[0].children[0].children[5] = html.Div(object_set.init_result[1], id="negmas-children")
+        # if object_set.layout.children[]
+        # import pdb;pdb.set_trace()
     else:
         print(f"please set attr 'components' into {object_set}")

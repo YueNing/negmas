@@ -77,7 +77,7 @@ def render(widget: Union[str, Widget]) -> Union[list, dict]:
                     for a in df
                 ],
                 layout=dict(
-                    xaxis=widget.params['xaxis'] if 'xaxis' in widget.params else {'type': 'log', 'title': 'X Axis'},
+                    xaxis=widget.params['xaxis'] if 'xaxis' in widget.params else { 'title': 'X Axis'},
                     yaxis=widget.params['yaxis'] if 'yaxis' in widget.params else {'title': 'Y Axis'},
                     margin=widget.params['margin'] if 'margin' in widget.params else {'l': 40, 'b': 40, 't': 10, 'r': 10},
                     legend=widget.params['legent'] if 'legend' in widget.params else {'x': 0, 'y': 1},
@@ -87,14 +87,15 @@ def render(widget: Union[str, Widget]) -> Union[list, dict]:
 
             return figure
     
-    return []
+    return {}
 
 # TODO:
 # dynamically creating callbacks for a dynamically created layout
 def create_callback(output_element,retfunc,name='callback'):
     """creates a callback function"""
     def callback(*input_values):
-        print ('callback fired with :"{}"  output:{}/{}'.format(input_values,output_element.component_id,output_element.component_property ))
+        print ('callback fired with :"{}"'.format(input_values))
+        print(retfunc)
         retval = []
         if input_values is not None and input_values!='None':
             try:
@@ -114,6 +115,7 @@ def register_callback(callbacks):
     for callback_data in callbacks:
         dynamically_generated_function = create_callback(callback_data[0], callback_data[3])
         app.callback(output=callback_data[0], inputs=callback_data[1],state=callback_data[2])(dynamically_generated_function)
+        # import pdb;pdb.set_trace()
 
 def define_callback(output, input, func=None, state=None):
     """Defines the callback set"""

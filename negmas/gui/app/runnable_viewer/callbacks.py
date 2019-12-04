@@ -14,15 +14,15 @@ from negmas.visualizers import VISUALIZERS, visualizer
 from negmas.helpers import get_full_type_name, instantiate, get_class
 from typing import Optional, Union
 
-from negmas.gui.runnable_viewer.layout import layout
-from negmas.gui.utils import render, set_callbacks
-from negmas.gui.named_viewer.layout import layout
-from negmas.gui.named_viewer.callbacks import *
-from negmas.gui.layouts.page_layout import set_dynamically_layout
+from negmas.gui.app.runnable_viewer.layout import layout
+from negmas.gui.app.utils import render, set_callbacks
+from negmas.gui.app.named_viewer.layout import layout
+from negmas.gui.app.named_viewer.callbacks import *
+from negmas.gui.app.layouts.page_layout import set_dynamically_layout
 
 # cache used for cache expensive computate
-from negmas.gui import cache
-from negmas.gui.settings import DEBUG, DEFAULT_RUNNABLE_PARAMS, DEFAULT_NUMBER_WIDGETS
+from negmas.gui.app import cache, app
+from negmas.gui.app.settings import DEBUG, DEFAULT_RUNNABLE_PARAMS, DEFAULT_NUMBER_WIDGETS
 
 def parse_contents(contents, filename, date) -> Dict:
     content_type, content_string = contents.split(',')
@@ -223,7 +223,7 @@ def set_runnable_dynamically_layout_callback():
     except:
         pass
     # import pdb;pdb.set_trace()
-    set_callbacks(components)
+    set_callbacks(components, app)
     return components
     # set_callbacks(components)
 
@@ -340,23 +340,3 @@ def control_previous_step(n_clicks):
         else:
             return True
     return False
-
-# @app.callback(
-#     Output('url', 'pathname'),
-#     [
-#         Input('control-info-next-step-error', 'is_open'),
-#         Input('control-info-previous-step-error', 'is_open'),
-#         Input('control-info-stop-start-error', 'is_open'),
-#     ]
-# )
-# def redirct_to(cins_is_open, cips_is_open, ciss_is_open):
-#     """
-#     control redirct mode
-#     """
-#     import time
-#     time.sleep(3)
-#     if cins_is_open or cips_is_open or ciss_is_open:
-#         return '/', False, False, False
-#     else:
-#         return '/run', False, False, False
-

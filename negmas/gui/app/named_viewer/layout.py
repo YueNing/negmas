@@ -1,6 +1,6 @@
 from typing import Type
 from negmas import NamedObject
-from negmas.gui.settings import LAYOUTS
+from negmas.gui.app.settings import LAYOUTS
 from negmas.helpers import get_full_type_name
 
 def layout(object_type: Type[NamedObject]):

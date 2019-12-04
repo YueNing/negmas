@@ -1,7 +1,7 @@
 # from negmas.gui.named_viewer import named_viewer_objects
 from negmas import NamedObject
 from negmas.helpers import get_full_type_name
-from negmas.gui.settings import LAYOUTS
+from negmas.gui.app.settings import LAYOUTS
 from typing import Type
 
 def layout(object_type: Type[NamedObject]):

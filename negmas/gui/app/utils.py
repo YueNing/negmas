@@ -6,7 +6,7 @@ import plotly
 
 from typing import Union, List
 from negmas.visualizers import Widget
-from negmas.gui import app
+from negmas.gui.app import app
 import sys
 
 def render(widget: Union[str, Widget]) -> Union[list, dict]:
@@ -108,13 +108,13 @@ def create_callback(output_element,retfunc,name='callback'):
 def getComponentId(name):
     return f"negmas-{name}"
 
-def register_callback(callbacks):
+def register_callback(callbacks, object_app):
     """register callback for app callback"""
     print(f"registering {len(callbacks)} callbacks for negmas.gui")
     
     for callback_data in callbacks:
         dynamically_generated_function = create_callback(callback_data[0], callback_data[3])
-        app.callback(output=callback_data[0], inputs=callback_data[1],state=callback_data[2])(dynamically_generated_function)
+        object_app.callback(output=callback_data[0], inputs=callback_data[1],state=callback_data[2])(dynamically_generated_function)
         # import pdb;pdb.set_trace()
 
 def define_callback(output, input, func=None, state=None):
@@ -130,7 +130,7 @@ def dummy_callback(*input_data):
     print('dummy callback with:', *input_data)
     return []
 
-def set_callbacks(components: list):
+def set_callbacks(components: list, app):
     """set callbacks for the app, 
     input components: [{"output":[(),()], "input", "func":}, {}, {}, {}]
     output data: [(Output,[Input],[State],callback_func), ...]
@@ -144,4 +144,4 @@ def set_callbacks(components: list):
     # return all predefined callbacks, later just call register_callback when   
     # import pdb;pdb.set_trace()  
     # return callbacks
-    register_callback(callbacks)
+    register_callback(callbacks, app)

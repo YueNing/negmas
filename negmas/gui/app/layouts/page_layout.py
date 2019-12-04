@@ -1,8 +1,8 @@
 import dash_core_components as dcc
 import dash_bootstrap_components as dbc
 import dash_html_components as html
-from negmas.gui.settings import *
-from negmas.gui.layouts.widget_layout import (
+from negmas.gui.app.settings import *
+from negmas.gui.app.layouts.widget_layout import (
     _left_up_button_group,
     _new_checkpoint,
     _right_up_group_runnable_component,

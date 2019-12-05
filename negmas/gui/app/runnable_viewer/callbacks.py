@@ -253,7 +253,7 @@ def update_runnable_callback(n, session_id):
             return _compute_runnable_data(n, session_id)
         except:
             if DEBUG:
-                print(f'error when update the runnable page {e}')
+                print(f'error when update the runnable page!')
             else:
                 pass
 

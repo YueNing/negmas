@@ -84,6 +84,7 @@ def set_dynamically_layout(object_set):
     
     if object_set.layout.children[0].children[0].children[5].id == 'negmas-children':
         object_set.layout.children[0].children[0].children[5] = html.Div(object_set.init_result[1], id="negmas-children")
-    
+    # import ipdb;ipdb.set_trace()
+    object_set.layout.children.append(html.Div("session_id11111", id="negmas-session_id", style={'display':'none'}))
     # if object_set.layout.children[]
     # import pdb;pdb.set_trace()

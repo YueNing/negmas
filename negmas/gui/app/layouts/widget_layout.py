@@ -20,7 +20,10 @@ control_info_next_step_error = dbc.Alert("Can not goto next step ! ", id="contro
 # base container
 base = html.Div(
     [
-        dcc.Location(id='url', refresh=False),
+        # why here need to set refresh as true, 
+        # when set false, can not automatically call the register callback function
+        # ??????
+        dcc.Location(id='url', refresh=True),
         html.Div(
             [control_info_stop_start_error, control_info_previous_step_error, control_info_next_step_error]
         ),

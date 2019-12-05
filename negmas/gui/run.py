@@ -1,7 +1,7 @@
 
 # if __name__ == "__main__":
 import sys
-sys.path.insert(0,'c:/Users/n1085/Documents/GitHub/negmas')
+sys.path.insert(0,'z:/negmas')
 from negmas.gui.app import app
 
 if __name__ == "__main__":

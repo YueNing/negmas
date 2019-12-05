@@ -51,6 +51,9 @@ def serve_layout():
 
 app.layout = serve_layout
 
+# load callback function from module 
+from negmas.gui.app.runnable_viewer.callbacks import run_callback
+
 @app.callback(
     Output('page-content', 'children'),
     [Input('url', 'pathname')]
@@ -67,10 +70,5 @@ def display_page(pathname):
     else:
         return '404'
 
-# def cli(debug=True):
-#     """Main entry point"""
-# app.run_server(debug=True)
-
-# cli()
 if __name__ == "__main__":
     app.run_server(debug=True)

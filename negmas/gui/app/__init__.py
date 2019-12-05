@@ -4,6 +4,7 @@ import uuid
 from dash.dependencies import Input, Output, State
 from flask_caching import Cache
 from typing import List
+from pathlib import Path
 
 # set the negmas path, just used for test and debug
 import sys
@@ -16,7 +17,7 @@ from negmas.helpers import get_full_type_name, instantiate, get_class
 # runnable and named layouts
 from negmas.gui.app.runnable_viewer.layout import layout as runnable_viewer_layout
 from negmas.gui.app.named_viewer.layout import layout as named_viewer_layout
-
+from negmas.gui.app.utils import validate_settings
 
 # initial the dash app
 f_app = flask.Flask(__name__)
@@ -28,8 +29,13 @@ cache = Cache(app.server, config=CACHE_CONFIG)
 def serve_layout():
     """ 
         used for pre-define the class id, 
-        can import callback before render the layout
+        can import callback before render the layout,
+        Call this function before run the dash server, 
+        Can add setting check code here
     """
+    # check the settings whether available
+    assert validate_settings(Path('./settings.py'))
+
     if flask.has_request_context():
         return base
     

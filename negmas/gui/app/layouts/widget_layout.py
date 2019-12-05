@@ -59,13 +59,8 @@ run_online = dbc.Card(
         [
             html.P("Run a new component", className="card-text"),
             dbc.Select(
-                options=[
-                    {'label': 'SCMLWorld', 'value': 'negmas.apps.scml.SCMLWorld'},
-                    {'label': 'World', 'value': 'negmas.situated.World'},
-                    {'label': 'Mechanism', 'value': 'negmas.mechanisms.Mechanism'},
-                    {'label': 'SAOMechanism', 'value': 'negmas.sao.SAOMechanism'},
-                ],
-                value='negmas.apps.scml.SCMLWorld',
+                options=[dict(label=runnable.split('.')[-1], value=runnable) for runnable in RUNNABLES],
+                value=RUNNABLES[0],
                 id="run_option",
                 className="mt-1",
             ),
@@ -96,12 +91,21 @@ run_offline = dbc.Card(
     dbc.CardBody(
         [
             html.P("Monitor a component", className="card-text"),
-            dbc.Input(
-                placeholder='Checkpoint folder ...',
-                type='file',
-                value='',
-                id="checkpoint-folder",
-                className="mt-1",
+            dcc.Upload(
+                id='offline-checkpoint-file',
+                children=html.Div([
+                    'Checkpoint file',
+                ]),
+                style={
+                    'width': '75%',
+                    'height': '60px',
+                    'lineHeight': '60px',
+                    'borderWidth': '1px',
+                    'borderStyle': 'dashed',
+                    'borderRadius': '5px',
+                    'textAlign': 'center',
+                    'margin': '10px'
+                },
             ),
             dbc.Input(
                 placeholder='[Optional] component ID',
@@ -109,6 +113,9 @@ run_offline = dbc.Card(
                 value='',
                 id="checkpoint-id",
                 className="mt-1",
+                style={
+                    'fontSize': '13px'
+                }
             ),
             dbc.Checklist(
                 options=[
@@ -118,7 +125,7 @@ run_offline = dbc.Card(
                 id="checkpoint-options",
                 className="mt-1",
             ),
-            dbc.Button("Monitor")
+            dbc.Button("Monitor", color="secondary", className="btn-block", id="monitor"),
         ]
     ),
     className="mt-3",
@@ -149,28 +156,11 @@ main_entry_body = dbc.Container(
                                         ),
                                     ],
                                 ),
-                                dbc.Row(
-                                    [
-                                        html.H2("Children"),
-                                    ],
-                                ),
-                                dbc.Row(
-                                    [
-                                        html.P("Children will appear here")
-                                    ],
-                                ),
                             ],
                             className="mt-0",
                         ),
                     ],
                     md=3,
-                ),
-                dbc.Col(
-                    [
-                        html.H2("Showing xyz (ID fdfdsf)", id="basic"),
-                        html.Div(id="main_widget")
-                    ],
-                    md=9,
                 ),
             ]
         )
@@ -220,7 +210,7 @@ _right_up_group_runnable_component = dbc.Row(
     [
         dbc.Col(
             [
-                daq.GraduatedBar(id="negmas-progress", max=100, value=0),
+                daq.GraduatedBar(id="negmas-progress", max=100, value=50),
                 html.I(id="negmas-step-backward", n_clicks=0, className='fa fa-step-backward fa-lg'),
                 html.I(id="negmas-play", n_clicks=0, className='fa fa-play'),
                 html.I(id="negmas-step-forward", n_clicks=0, className='fa fa-step-forward'),

@@ -12,7 +12,13 @@ from negmas.gui.app.layouts.widget_layout import (
 )
 
 # Used for entry page, home page '/'
-MAIN_LAYOUT = html.Div([navbar, main_entry_body], style={"width": "100%"})
+MAIN_LAYOUT = html.Div([navbar, main_entry_body], style={
+    "width": "100%",
+    "height": "500px",
+    # "background-color": "black",
+    "background-image": "Z:/negmas/negmas/gui/app/resources/image/negmas-logo.png"
+    }
+)
 
 # DEFAULT_LAYOUT   described as following
 # | button group   | control_bar |

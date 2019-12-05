@@ -39,11 +39,6 @@ MAX_CHECKPOINT_EVERY = 10
 MAX_NUMBER_WIDGETS = 4
 DEFAULT_NUMBER_WIDGETS = 2
 
-from negmas.gui.app.layouts.page_layout import MAIN_LAYOUT, DEFAULT_LAYOUT_RUNNABLE, DEFAULT_LAYOUT_NAMED
-
-#  Home Page/ Main_LAYOUT
-HOME_PAGE =  MAIN_LAYOUT
-
 # Runnable Object Layout settings
 # when add a new runnables object, 
 # at the same time need to 
@@ -55,8 +50,15 @@ RUNNABLES = [
     'negmas.apps.scml.SCMLWorld',
     'negmas.situated.World',
     'negmas.sao.SAOMechanism',
-    'negmas.mechanisms.Mechanism'
+    'negmas.mechanisms.Mechanism',
+    'negmas.ga.GAMechanism',
 ]
+
+from negmas.gui.app.layouts.page_layout import MAIN_LAYOUT, DEFAULT_LAYOUT_RUNNABLE, DEFAULT_LAYOUT_NAMED
+
+#  Home Page/ Main_LAYOUT
+HOME_PAGE =  MAIN_LAYOUT
+
 
 # Default configuration for runnable object
 from pathlib import Path

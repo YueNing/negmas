@@ -6,7 +6,6 @@ import plotly
 
 from typing import Union, List
 from negmas.visualizers import Widget
-from negmas.gui.app import app
 import sys
 from textwrap import dedent
 
@@ -200,3 +199,7 @@ def show_callbacks(app):
 
         output_list.append(output)
     return "\n".join(output_list)
+
+def validate_settings(filepath):
+    """Check the settings of system before running the server"""
+    return True

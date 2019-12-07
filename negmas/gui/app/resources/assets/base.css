@@ -1,3 +1,31 @@
 .page-404 {
+    height:400px;
+    width: 400px;
+    position: absolute;
     text-align: center;
+    left:50%;
+    top:50%;
+    margin-left:-200px;
+    margin-top:-330px;
+}
+
+.fullscreen-div{
+    height: 100%;
+}
+
+#negmas-log-img-404 {
+    border-radius: 50%;
+    max-width: 75%;
+    height: auto;
+}
+
+#view-on-github {
+    position: absolute;
+    right: 105px;
+}
+
+#github-marker {
+    border-radius: 80%;
+    max-width: 50%;
+    height: auto;
 }

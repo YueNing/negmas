@@ -37,6 +37,14 @@ base = html.Div(
 navbar = dbc.NavbarSimple(
     children=[
         dbc.NavItem(dbc.NavLink("Settings", href="/settings")),
+        html.Div(id="view-on-github", children=[
+            html.A(dbc.Row([
+                        html.Img(id="github-marker",src="https://i.loli.net/2019/12/08/Bl7EyhWIHdVuQGq.png"),
+                        dbc.NavItem(dbc.NavLink("View on Github", href="https://github.com/yasserfarouk/negmas")),
+                    ]
+                ), href="https://github.com/yasserfarouk/negmas")
+
+        ])
         # dbc.DropdownMenu(
         #     nav=True,
         #     in_navbar=True,

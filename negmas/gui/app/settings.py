@@ -128,3 +128,5 @@ CACHE_CONFIG = {
     # higher numbers will store more data in the filesystem / redis cache
     'CACHE_THRESHOLD': 200
 }
+
+ASSETS_FOLDER = "./resources/assets"

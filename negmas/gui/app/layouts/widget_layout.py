@@ -260,3 +260,21 @@ _right_up_group_runnable_component = dbc.Row(
 _back_to_parent = dbc.Row(
     dcc.Link(dbc.Button("back_to_parent", id="back_to_parent", color="secondary", className="mr-1"), href="/backToParent"),
 )
+
+index_string = """<!DOCTYPE html>
+<html>
+    <head>
+        {%metas%}
+        <title>Negmas Visualizer</title>
+        {%favicon%}
+        {%css%}
+    </head>
+    <body>
+        {%app_entry%}
+        <footer>
+            {%config%}
+            {%scripts%}
+            {%renderer%}
+        </footer>
+    </body>
+</html>"""

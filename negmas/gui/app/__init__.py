@@ -11,7 +11,7 @@ import sys
 sys.path.insert(0,'c:/Users/n1085/Documents/GitHub/negmas')
 
 from negmas.gui.app.settings import *
-from negmas.gui.app.layouts.widget_layout import base
+from negmas.gui.app.layouts.widget_layout import base, index_string
 from negmas.helpers import get_full_type_name, instantiate, get_class
 
 # runnable and named layouts
@@ -21,7 +21,12 @@ from negmas.gui.app.utils import validate_settings
 
 # initial the dash app
 f_app = flask.Flask(__name__)
-app = dash.Dash(__name__, external_stylesheets=EXTERNAL_STYLE_SHEETS, server=f_app)
+app = dash.Dash(__name__, 
+                external_stylesheets=EXTERNAL_STYLE_SHEETS, 
+                server=f_app,
+                assets_folder=ASSETS_FOLDER,
+                index_string=index_string)
+
 app.config.suppress_callback_exceptions = True
 # set cache config for dash app
 cache = Cache(app.server, config=CACHE_CONFIG)

@@ -12,6 +12,7 @@ sys.path.insert(0,'c:/Users/n1085/Documents/GitHub/negmas')
 
 from negmas.gui.app.settings import *
 from negmas.gui.app.layouts.widget_layout import base, index_string
+from negmas.gui.app.layouts.page_layout import PAGE_404
 from negmas.helpers import get_full_type_name, instantiate, get_class
 
 # runnable and named layouts
@@ -79,7 +80,7 @@ def display_page(pathname):
         # get the /run router, return the relative layout
         return run_callback.layout
     else:
-        return '404'
+        return PAGE_404
 
 if __name__ == "__main__":
     app.run_server(debug=True)

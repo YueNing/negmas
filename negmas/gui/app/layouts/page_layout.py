@@ -63,6 +63,13 @@ DEFAULT_LAYOUT_RUNNABLE =  html.Div(
 
 DEFAULT_LAYOUT_NAMED = html.Div()
 
+PAGE_404 = html.Div(id="404-page", className="page-404", children=[
+        html.H2("404 - PAGE NOT FOUND "),
+        html.P("The page you are looking for might have been removed"),
+        html.P("had its name changed or is temporarily unavailable."),
+        dcc.Link(dbc.Button("GO TO HOMEPAGE", color="primary", size="lg"), href="/"),
+    ]
+)
 
 def set_dynamically_layout(object_set):
     # now just need to add graphs into this layout

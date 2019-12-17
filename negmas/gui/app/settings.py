@@ -84,7 +84,16 @@ DEFAULT_RUNNABLE_PARAMS = {
         "negotiators": [AspirationNegotiator, AspirationNegotiator, AspirationNegotiator],
         "mapping_utility_function": MappingUtilityFunction
     },
+    "negmas.apps.scml.SCMLWorld": {
+        "type": "negmas.apps.scml.SCMLWorld",
+        "agent_names_reveal_type": True,
+        "n_steps": 100,
+        "n_intermediate_levels": 1,
+        "compact": True,
+        "log_file_name": '',
+    }
 }
+
 # Named object
 NAMED = [
     'negmas.negotiators.Negotiator',

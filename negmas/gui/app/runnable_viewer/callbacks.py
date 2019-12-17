@@ -69,7 +69,7 @@ def run_callback(n_clicks, run_option, config_contents, filename, date):
     print('====================Debug Information for run_callback===========================================')
     print(f'n_clciks: {n_clicks}, run_option: {run_option}, filename: {filename} !!')
     
-    # Need to pre analyse the config, defined in json file
+    # Need to pre-analyse the config, defined in json file and default config from settings.py
     def _pre_check_config(run_option, run_config: dict) -> List:
         assert(run_option == run_config["type"])
         del run_config["type"]
@@ -87,16 +87,20 @@ def run_callback(n_clicks, run_option, config_contents, filename, date):
                     mapping_utility_function = run_config.get("mapping_utility_function", None)
                 del run_config['mapping_utility_function']
             return run_config, negotiators, mapping_utility_function
-
+        if run_option == "negmas.apps.scml.SCMLWorld":
+            return run_config,
+    
+    # prepare the configs
     if filename is not None:
     # get config from json file
         run_config = parse_contents(config_contents, filename, date)
-        config, negotiators, mapping_utility_function = _pre_check_config(run_option, run_config)
+        config, *run_setting = _pre_check_config(run_option, run_config)
         # import pdb;pdb.set_trace()
     else:
         try:
             run_config = DEFAULT_RUNNABLE_PARAMS[run_option]
-            config, negotiators, mapping_utility_function = _pre_check_config(run_option, run_config)
+            # config pass through the runner, and run_setting are all config that needed by the runner
+            config, *run_setting = _pre_check_config(run_option, run_config)
         except Exception as e:
             if DEBUG:
                 print(f"Can not get Default config of {run_option}, Please add Default Config in file settings")
@@ -108,14 +112,20 @@ def run_callback(n_clicks, run_option, config_contents, filename, date):
         # for example add Negotiators into Mechanism
         if run_option == 'negmas.sao.SAOMechanism':
             runner = get_class(run_option)(**config)
-            ufuns = mapping_utility_function.generate_random(len(negotiators), run_config['outcomes'])
-            for i, negotiator in enumerate(negotiators):
-                runner.add(negotiator(name=f"agent{i}"), ufun=ufuns[i])
+            ufuns = run_setting[1].generate_random(len(run_setting[0]), run_config['outcomes'])
+            for i in range(len(run_setting[0])):
+                runner.add(run_setting[0][i](name=f"agent{i}"), ufun=ufuns[i])
+        if run_option == 'negmas.apps.scml.SCMLWorld':
+            # TODO run the SCMLWorld
+            runner = get_class(run_option)(**config)
+
     except Exception as e:
         if DEBUG:
             print(f"Can not get runner instance!: {e}")
         return "/"
     
+    import pdb;pdb.set_trace()
+
     try:
         # run the exactly runner, will create a folder
         runner.run()

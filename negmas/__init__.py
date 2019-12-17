@@ -2,7 +2,7 @@
 """A framework for conducting multi-strand multilateral asynchronous negotiations on multiple issues."""
 __author__ = """Yasser Mohammad"""
 __email__ = "yasserfarouk@gmail.com"
-__version__ = "0.3.5"
+__version__ = "0.4.4"
 
 import json
 import pathlib
@@ -28,7 +28,9 @@ from .outcomes import *
 from .utilities import *
 from .negotiators import *
 from .mechanisms import *
+from negmas.modeling import *
 from .sao import *
+from .st import *
 from .inout import *
 from .genius import *
 from .situated import *
@@ -40,8 +42,10 @@ __all__ = (
     + negotiators.__all__
     + mechanisms.__all__
     + sao.__all__
+    + st.__all__
     + inout.__all__
     + genius.__all__
     + situated.__all__
-    + ["generics", "helpers", "events", "apps", "tournaments"]
+    + modeling.__all__
+    + ["generics", "helpers", "events", "tournaments"]
 )

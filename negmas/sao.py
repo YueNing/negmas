@@ -2,6 +2,7 @@
 Implements Stacked Alternating Offers (SAO) mechanism and basic negotiators.
 """
 import itertools
+import math
 import random
 import time
 import warnings
@@ -34,6 +35,7 @@ from negmas.outcomes import (
     outcome_as_dict,
     outcome_as_tuple,
     outcome_is_complete,
+    Issue,
 )
 from negmas.utilities import (
     MappingUtilityFunction,
@@ -41,7 +43,13 @@ from negmas.utilities import (
     UtilityFunction,
     UtilityValue,
     JavaUtilityFunction,
+    utility_range,
+    outcome_with_utility,
 )
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
 
 __all__ = [
     "SAOState",
@@ -97,7 +105,7 @@ class SAOMechanism(Mechanism):
         step_time_limit=None,
         max_n_agents=None,
         dynamic_entry=True,
-        keep_issue_names=True,
+        keep_issue_names=False,
         cache_outcomes=True,
         max_n_outcomes: int = 1000000,
         annotation: Optional[Dict[str, Any]] = None,
@@ -174,6 +182,243 @@ class SAOMechanism(Mechanism):
             else None,
             n_acceptances=self._n_accepting if self.publish_n_acceptances else 0,
         )
+
+    def plot(
+        self,
+        visible_negotiators: Union[Tuple[int, int], Tuple[str, str]] = (0, 1),
+        plot_utils=True,
+        plot_outcomes=False,
+        utility_range: Optional[Tuple[float, float]] = None,
+    ):
+        import matplotlib.pyplot as plt
+        import matplotlib.gridspec as gridspec
+
+        if self.issues is not None and len(self.issues) > 1:
+            plot_outcomes = False
+
+        if len(self.negotiators) < 2:
+            print("Cannot visualize negotiations with more less than 2 negotiators")
+            return
+        if len(visible_negotiators) > 2:
+            print("Cannot visualize more than 2 agents")
+            return
+        if isinstance(visible_negotiators[0], str):
+            tmp = []
+            for _ in visible_negotiators:
+                for n in self.negotiators:
+                    if n.id == _:
+                        tmp.append(n)
+        else:
+            visible_negotiators = [
+                self.negotiators[visible_negotiators[0]],
+                self.negotiators[visible_negotiators[1]],
+            ]
+        indx = dict(zip([_.id for _ in self.negotiators], range(len(self.negotiators))))
+        history = []
+        for state in self.history:
+            for a, o in state.new_offers:
+                history.append(
+                    {
+                        "current_proposer": a,
+                        "current_offer": o,
+                        "offer_index": self.outcomes.index(o),
+                        "relative_time": state.relative_time,
+                        "step": state.step,
+                        "u0": visible_negotiators[0].utility_function(o),
+                        "u1": visible_negotiators[1].utility_function(o),
+                    }
+                )
+        history = pd.DataFrame(data=history)
+        has_history = len(history) > 0
+        has_front = 1
+        n_negotiators = len(self.negotiators)
+        n_agents = len(visible_negotiators)
+        ufuns = self._get_ufuns()
+        outcomes = self.outcomes
+        utils = [tuple(f(o) for f in ufuns) for o in outcomes]
+        agent_names = [a.name for a in visible_negotiators]
+        if has_history:
+            history["offer_index"] = [outcomes.index(_) for _ in history.current_offer]
+        frontier, frontier_outcome = self.pareto_frontier(sort_by_welfare=True)
+        frontier_indices = [
+            i
+            for i, _ in enumerate(frontier)
+            if _[0] is not None
+            and _[0] > float("-inf")
+            and _[1] is not None
+            and _[1] > float("-inf")
+        ]
+        frontier = [frontier[i] for i in frontier_indices]
+        frontier_outcome = [frontier_outcome[i] for i in frontier_indices]
+        frontier_outcome_indices = [outcomes.index(_) for _ in frontier_outcome]
+        if plot_utils:
+            fig_util = plt.figure()
+        if plot_outcomes:
+            fig_outcome = plt.figure()
+        gs_util = gridspec.GridSpec(n_agents, has_front + 1) if plot_utils else None
+        gs_outcome = (
+            gridspec.GridSpec(n_agents, has_front + 1) if plot_outcomes else None
+        )
+        axs_util, axs_outcome = [], []
+
+        for a in range(n_agents):
+            if a == 0:
+                if plot_utils:
+                    axs_util.append(fig_util.add_subplot(gs_util[a, has_front]))
+                if plot_outcomes:
+                    axs_outcome.append(
+                        fig_outcome.add_subplot(gs_outcome[a, has_front])
+                    )
+            else:
+                if plot_utils:
+                    axs_util.append(
+                        fig_util.add_subplot(gs_util[a, has_front], sharex=axs_util[0])
+                    )
+                if plot_outcomes:
+                    axs_outcome.append(
+                        fig_outcome.add_subplot(
+                            gs_outcome[a, has_front], sharex=axs_outcome[0]
+                        )
+                    )
+            if plot_utils:
+                axs_util[-1].set_ylabel(agent_names[a])
+            if plot_outcomes:
+                axs_outcome[-1].set_ylabel(agent_names[a])
+        for a, (au, ao) in enumerate(
+            zip(
+                itertools.chain(axs_util, itertools.repeat(None)),
+                itertools.chain(axs_outcome, itertools.repeat(None)),
+            )
+        ):
+            if au is None and ao is None:
+                break
+            if has_history:
+                h = history.loc[
+                    history.current_proposer == visible_negotiators[a].id,
+                    ["relative_time", "offer_index", "current_offer"],
+                ]
+                h["utility"] = h["current_offer"].apply(ufuns[a])
+                if plot_outcomes:
+                    ao.plot(h.relative_time, h["offer_index"])
+                if plot_utils:
+                    au.plot(h.relative_time, h.utility)
+                    if utility_range is not None:
+                        au.set_ylim(*utility_range)
+
+        if has_front:
+            if plot_utils:
+                axu = fig_util.add_subplot(gs_util[:, 0])
+                axu.scatter(
+                    [_[0] for _ in utils],
+                    [_[1] for _ in utils],
+                    label="outcomes",
+                    color="gray",
+                    marker="s",
+                    s=20,
+                )
+            if plot_outcomes:
+                axo = fig_outcome.add_subplot(gs_outcome[:, 0])
+            clrs = ("blue", "green")
+            if plot_utils:
+                f1, f2 = [_[0] for _ in frontier], [_[1] for _ in frontier]
+                axu.scatter(f1, f2, label="frontier", color="red", marker="x")
+                # axu.legend()
+                axu.set_xlabel(agent_names[0] + " utility")
+                axu.set_ylabel(agent_names[1] + " utility")
+                if self.agreement is not None:
+                    pareto_distance = 1e9
+                    cu = (ufuns[0](self.agreement), ufuns[1](self.agreement))
+                    for pu in frontier:
+                        dist = math.sqrt((pu[0] - cu[0]) ** 2 + (pu[1] - cu[1]) ** 2)
+                        if dist < pareto_distance:
+                            pareto_distance = dist
+                    axu.text(
+                        0.05,
+                        0.05,
+                        f"Pareto-distance={pareto_distance:5.2}",
+                        verticalalignment="top",
+                        transform=axu.transAxes,
+                    )
+
+            if plot_outcomes:
+                axo.scatter(
+                    frontier_outcome_indices,
+                    frontier_outcome_indices,
+                    color="red",
+                    marker="x",
+                    label="frontier",
+                )
+                axo.legend()
+                axo.set_xlabel(agent_names[0])
+                axo.set_ylabel(agent_names[1])
+
+            if plot_utils and has_history:
+                for a in range(n_agents):
+                    h = history.loc[
+                        history.current_proposer == visible_negotiators[a].id,
+                        ["relative_time", "offer_index", "current_offer"],
+                    ]
+                    h["u0"] = h["current_offer"].apply(ufuns[0])
+                    h["u1"] = h["current_offer"].apply(ufuns[1])
+                    axu.scatter(h.u0, h.u1, color=clrs[a], label=f"{agent_names[a]}")
+                axu.scatter(
+                    [frontier[0][0]],
+                    [frontier[0][1]],
+                    color="magenta",
+                    label=f"Max. Welfare",
+                )
+                axu.annotate(
+                    "Max. Welfare",
+                    xy=frontier[0],  # theta, radius
+                    xytext=(
+                        frontier[0][0] + 0.02,
+                        frontier[0][1] + 0.02,
+                    ),  # fraction, fraction
+                    horizontalalignment="left",
+                    verticalalignment="bottom",
+                )
+            if plot_outcomes and has_history:
+                steps = sorted(history.step.unique().tolist())
+                aoffers = [[], []]
+                for step in steps[::2]:
+                    offrs = []
+                    for a in range(n_agents):
+                        a_offer = history.loc[
+                            (history.current_proposer == agent_names[a])
+                            & ((history.step == step) | (history.step == step + 1)),
+                            "offer_index",
+                        ]
+                        if len(a_offer) > 0:
+                            offrs.append(a_offer.values[-1])
+                    if len(offrs) == 2:
+                        aoffers[0].append(offrs[0])
+                        aoffers[1].append(offrs[1])
+                axo.scatter(aoffers[0], aoffers[1], color=clrs[0], label=f"offers")
+
+            if self.state.agreement is not None:
+                if plot_utils:
+                    axu.scatter(
+                        [ufuns[0](self.state.agreement)],
+                        [ufuns[1](self.state.agreement)],
+                        color="black",
+                        marker="*",
+                        s=120,
+                        label="SCMLAgreement",
+                    )
+                if plot_outcomes:
+                    axo.scatter(
+                        [outcomes.index(self.state.agreement)],
+                        [outcomes.index(self.state.agreement)],
+                        color="black",
+                        marker="*",
+                        s=120,
+                        label="Agreement",
+                    )
+
+        if plot_utils:
+            fig_util.show()
+        if plot_outcomes:
+            fig_outcome.show()
 
     def round(self) -> MechanismRoundResult:
         """implements a round of the Stacked Alternating Offers Protocol.
@@ -683,7 +928,7 @@ class SAONegotiator(Negotiator):
         proposal = self.propose(state=state)
 
         # never return a proposal that is less than the reserved value
-        if self.rational_proposal and self.reserved_value is not None:
+        if self.rational_proposal:
             utility = None
             if proposal is not None and self._utility_function is not None:
                 utility = self._utility_function(proposal)
@@ -870,10 +1115,10 @@ class RandomNegotiator(Negotiator, RandomResponseMixin, RandomProposalMixin):
         outcomes: Union[int, List["Outcome"]],
         name: str = None,
         parent: Controller = None,
-        reserved_value: float = None,
+        reserved_value: float = float("-inf"),
         p_acceptance=0.15,
         p_rejection=0.25,
-        p_ending=0.1,
+        p_ending=0.05,
         can_propose=True,
         ufun=None,
     ) -> None:
@@ -952,6 +1197,35 @@ class LimitedOutcomesAcceptor(SAONegotiator, LimitedOutcomesAcceptorMixin):
 
 
 class AspirationNegotiator(SAONegotiator, AspirationMixin):
+    """
+    Represents a time-based negotiation strategy that is independent of the offers received during the negotiation.
+
+    Args:
+        name: The agent name
+        ufun:  The utility function to attache with the agent
+        parent: The parent which should be an ``SAOController``
+        max_aspiration: The aspiration level to use for the first offer (or first acceptance decision).
+        aspiration_type: The polynomial aspiration curve type. Here you can pass the exponent as a real value or
+                         pass a string giving one of the predefined types: linear, conceder, boulware.
+        dynamic_ufun: If True, the utility function will be assumed to be changing over time. This is depricated.
+        randomize_offer: If True, the agent will propose outcomes with utility >= the current aspiration level not
+                         outcomes just above it.
+        can_propose: If True, the agent is allowed to propose
+        assume_normalized: If True, the ufun will just be assumed to have the range [0, 1] inclusive
+        ranking: If True, the aspiration level will not be based on the utility value but the ranking of the outcome
+                 within the presorted list. It is only effective when presort is set to True
+        ufun_max: The maximum utility value (used only when `presort` is True)
+        ufun_min: The minimum utility value (used only when `presort` is True)
+        presort: If True, the negotiator will catch a list of outcomes, presort them and only use them for offers
+                 and responses. This is much faster then other option for general continuous utility functions
+                 but with the obvious problem of only exploring a discrete subset of the issue space (Decided by
+                 the `discrete_outcomes` property of the `AgentMechanismInterface` . If the number of outcomes is
+                 very large (i.e. > 10000) and discrete, presort will be forced to be True. You can check if
+                 presorting is active in realtime by checking the "presorted" attribute.
+        tolerance: A tolerance used for sampling of outcomes when `presort` is set to False
+
+    """
+
     def __init__(
         self,
         name=None,
@@ -966,11 +1240,14 @@ class AspirationNegotiator(SAONegotiator, AspirationMixin):
         ranking=False,
         ufun_max=None,
         ufun_min=None,
+        presort: bool = True,
+        tolerance: float = 0.01,
     ):
         self.ordered_outcomes = []
         self.ufun_max = ufun_max
         self.ufun_min = ufun_min
         self.ranking = ranking
+        self.tolerance = tolerance
         if assume_normalized:
             self.ufun_max, self.ufun_min = 1.0, 0.0
         super().__init__(
@@ -985,6 +1262,9 @@ class AspirationNegotiator(SAONegotiator, AspirationMixin):
             )
         self.randomize_offer = randomize_offer
         self._max_aspiration = self.max_aspiration
+        self.best_outcome, self.worst_outcome = None, None
+        self.presort = presort
+        self.presorted = False
         self.add_capabilities(
             {
                 "respond": True,
@@ -993,27 +1273,56 @@ class AspirationNegotiator(SAONegotiator, AspirationMixin):
                 "max-proposals": None,  # indicates infinity
             }
         )
+        self.__last_offer_util, self.__last_offer = float("inf"), None
+        self.n_outcomes_to_force_presort = 10000
 
     def on_ufun_changed(self):
         super().on_ufun_changed()
-        outcomes = self._ami.discrete_outcomes()
-        self.ordered_outcomes = sorted(
-            [(self._utility_function(outcome), outcome) for outcome in outcomes],
-            key=lambda x: float(x[0]) if x[0] is not None else float("-inf"),
-            reverse=True,
-        )
-        if not self.assume_normalized:
-            self.ufun_max = self.ordered_outcomes[0][0]
+        presort = self.presort
+        if (
+            not presort
+            and all(i.is_countable() for i in self._ami.issues)
+            and Issue.num_outcomes(self._ami.issues) >= self.n_outcomes_to_force_presort
+        ):
+            presort = True
+        if presort:
+            outcomes = self._ami.discrete_outcomes()
+            self.ordered_outcomes = sorted(
+                [(self._utility_function(outcome), outcome) for outcome in outcomes],
+                key=lambda x: float(x[0]) if x[0] is not None else float("-inf"),
+                reverse=True,
+            )
+            if not self.assume_normalized:
+                if self.ufun_max is None:
+                    self.ufun_max = self.ordered_outcomes[0][0]
 
-            # we set the minimum utility to the minimum finite value above both reserved_value
-            for j in range(len(outcomes) - 1, -1, -1):
-                self.ufun_min = self.ordered_outcomes[j][0]
-                if self.ufun_min > float("-inf"):
-                    break
-            if self.reserved_value is not None and self.ufun_min < self.reserved_value:
-                self.ufun_min = self.reserved_value
+                if self.ufun_min is None:
+                    # we set the minimum utility to the minimum finite value above both reserved_value
+                    for j in range(len(outcomes) - 1, -1, -1):
+                        self.ufun_min = self.ordered_outcomes[j][0]
+                        if self.ufun_min is not None and self.ufun_min > float("-inf"):
+                            break
+                    if (
+                        self.ufun_min is not None
+                        and self.ufun_min < self.reserved_value
+                    ):
+                        self.ufun_min = self.reserved_value
+        else:
+            if self.ufun_min is None or self.ufun_max is None:
+                mn, mx, self.worst_outcome, self.best_outcome = utility_range(
+                    self.ufun, return_outcomes=True, issues=self._ami.issues
+                )
+                if self.ufun_min is None:
+                    self.ufun_min = mn
+                if self.ufun_max is None:
+                    self.ufun_max = mx
+
+        self.presorted = presort
+        self.n_trials = 10
 
     def respond(self, state: MechanismState, offer: "Outcome") -> "ResponseType":
+        if self.ufun_max is None or self.ufun_min is None:
+            self.on_ufun_changed()
         if self._utility_function is None:
             return ResponseType.REJECT_OFFER
         u = self._utility_function(offer)
@@ -1023,33 +1332,64 @@ class AspirationNegotiator(SAONegotiator, AspirationMixin):
             self.aspiration(state.relative_time) * (self.ufun_max - self.ufun_min)
             + self.ufun_min
         )
-        if u >= asp and (self.reserved_value is None or u > self.reserved_value):
+        if u >= asp and u > self.reserved_value:
             return ResponseType.ACCEPT_OFFER
-        if self.reserved_value is not None and asp < self.reserved_value:
+        if asp < self.reserved_value:
             return ResponseType.END_NEGOTIATION
         return ResponseType.REJECT_OFFER
 
     def propose(self, state: MechanismState) -> Optional["Outcome"]:
+        if self.ufun_max is None or self.ufun_min is None:
+            self.on_ufun_changed()
         asp = (
             self.aspiration(state.relative_time) * (self.ufun_max - self.ufun_min)
             + self.ufun_min
         )
-        if self.reserved_value is not None and asp < self.reserved_value:
+        if asp < self.reserved_value:
             return None
-        for i, (u, o) in enumerate(self.ordered_outcomes):
-            if u is None:
-                continue
-            if u < asp:
-                if self.reserved_value is not None and u < self.reserved_value:
-                    return None
-                if i == 0:
-                    return self.ordered_outcomes[i][1]
-                if self.randomize_offer:
-                    return random.sample(self.ordered_outcomes[:i], 1)[0][1]
-                return self.ordered_outcomes[i - 1][1]
-        if self.randomize_offer:
-            return random.sample(self.ordered_outcomes, 1)[0][1]
-        return self.ordered_outcomes[-1][1]
+        if self.presorted:
+            for i, (u, o) in enumerate(self.ordered_outcomes):
+                if u is None:
+                    continue
+                if u < asp:
+                    if u < self.reserved_value:
+                        return None
+                    if i == 0:
+                        return self.ordered_outcomes[i][1]
+                    if self.randomize_offer:
+                        return random.sample(self.ordered_outcomes[:i], 1)[0][1]
+                    return self.ordered_outcomes[i - 1][1]
+            if self.randomize_offer:
+                return random.sample(self.ordered_outcomes, 1)[0][1]
+            return self.ordered_outcomes[-1][1]
+        else:
+            if asp >= 0.99999999999 and self.best_outcome is not None:
+                return self.best_outcome
+            if self.randomize_offer:
+                return outcome_with_utility(
+                    ufun=self._utility_function,
+                    rng=(asp, float("inf")),
+                    issues=self._ami.issues,
+                )
+            tol = self.tolerance
+            for _ in range(self.n_trials):
+                rng = self.ufun_max - self.ufun_min
+                mx = min(asp + tol * rng, self.__last_offer_util)
+                outcome = outcome_with_utility(
+                    ufun=self._utility_function, rng=(asp, mx), issues=self._ami.issues
+                )
+                if outcome is not None:
+                    break
+                tol = math.sqrt(tol)
+            else:
+                outcome = (
+                    self.best_outcome
+                    if self.__last_offer is None
+                    else self.__last_offer
+                )
+            self.__last_offer_util = self.utility_function(outcome)
+            self.__last_offer = outcome
+            return outcome
 
 
 class NiceNegotiator(SAONegotiator, RandomProposalMixin):

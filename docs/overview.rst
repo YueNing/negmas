@@ -46,7 +46,7 @@ for a specific application or research domain:
       mechanism need not be a standard negotiation protocol. For example
       auction mechanisms (like second-price auctions) can easily be
       implemented in this package.
-   5. **opponent\_models** This module provides the basic interface for
+   5. **opponent_models** This module provides the basic interface for
       all opponent models.
    6. **situated** This module implements world simulations within which
       agents with intrinsic utilty functions can engage in simulataneous
@@ -98,7 +98,7 @@ Negotiations are conducted between mutliple agents with the goal of
 achieving an *agreement* (usually called a contract) on one of several
 possible outcomes. Each *outcome* is in general an assignment to some
 value to a set of issues. Each *issue* is a variable that can take one
-of a -- probably infinit -- set of values from some predefined *domain*.
+of a – probably infinit – set of values from some predefined *domain*.
 
 The classes and funtions supporting management of issues, outcomes and
 responses are combined in the ``outcomes`` module.
@@ -129,7 +129,7 @@ follows:
 
 .. parsed-literal::
 
-    2yW4Acq9GFz6Y1t9: ['to be', 'not to be']
+    ujsOSObZD5IZoGjd: ['to be', 'not to be']
     The Problem: ['to be', 'not to be']
 
 
@@ -144,7 +144,7 @@ follows:
 
 .. parsed-literal::
 
-    number of items: 10
+    number of items: (0, 9)
 
 
 -  Using a ``tuple`` with a lower and upper real-valued boundaries to
@@ -167,14 +167,14 @@ find the ``cardinality`` of any issue using:
 
 .. code:: ipython3
 
-    [issue2.cardinality(), issue3.cardinality(), issue4.cardinality()]
+    [issue2.cardinality, issue3.cardinality, issue4.cardinality]
 
 
 
 
 .. parsed-literal::
 
-    [2, 10, -1]
+    [2, 10, inf]
 
 
 
@@ -199,15 +199,15 @@ the usual ``-1`` encoding infinity):
 
 .. code:: ipython3
 
-    [Issue.n_outcomes([issue1, issue2, issue3, issue4]), # expected -1 because of issue4
-     Issue.n_outcomes([issue1, issue2, issue3])] # expected 40 = 2 * 2 * 4
+    [Issue.num_outcomes([issue1, issue2, issue3, issue4]), # expected -1 because of issue4
+     Issue.num_outcomes([issue1, issue2, issue3])] # expected 40 = 2 * 2 * 4
 
 
 
 
 .. parsed-literal::
 
-    [-1, 40]
+    [inf, 40]
 
 
 
@@ -227,10 +227,11 @@ You can pick random valid or invalid values for the issue:
 
 .. parsed-literal::
 
-    [['not to be', '20190203-085645wL56nGisto be20190203-085645WgNZq6IT'],
-     ['to be', '20190203-085645tgUe52Rvnot to be20190203-085645JgwBuNO6'],
-     [3, 19],
-     [0.47700977655271704, 1.86630992777164]]
+    [['to be', '20191204H150950767460YFBbBciGto be20191204H1509507675026Qo5hsNR'],
+     ['to be',
+      '20191204H150950767526EOD79Q2cnot to be20191204H150950767559yWWU2KHE'],
+     [7, 16],
+     [0.372449262972256, 1.6379287837318206]]
 
 
 
@@ -254,7 +255,7 @@ when an issue has many values.
     ['to be', 'not to be']
     ['to be', 'not to be']
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    Cannot return all possibilities of a continuous issue
+    Cannot return all possibilities of a continuous/uncountable issue
 
 
 Outcomes
@@ -371,11 +372,11 @@ Now you can use objects of MyOutcome as normal outcomes
 
 .. parsed-literal::
 
-    MyOutcome(problem='to be', price=1.0848388916904823, quantity=0)
-    MyOutcome(problem='to be', price=1.8906644944040263, quantity=0)
-    MyOutcome(problem='not to be', price=1.2102407956353904, quantity=0)
-    MyOutcome(problem='not to be', price=2.957644296190988, quantity=1)
-    MyOutcome(problem='not to be', price=2.847064181581488, quantity=0)
+    MyOutcome(problem='to be', price=2.994358541523904, quantity=3)
+    MyOutcome(problem='not to be', price=2.702365619666316, quantity=3)
+    MyOutcome(problem='to be', price=1.0535014988939553, quantity=4)
+    MyOutcome(problem='not to be', price=1.693743551392433, quantity=3)
+    MyOutcome(problem='to be', price=1.8237347215154869, quantity=4)
 
 
 The *sample* function created objects of type MyOutcome that can be
@@ -390,9 +391,9 @@ accessed using either the dot notation or as a dict
 
 .. parsed-literal::
 
-    1.0848388916904823
-    1.0848388916904823
-    1.0848388916904823
+    2.994358541523904
+    2.994358541523904
+    2.994358541523904
 
 
 OutcomeType is intended to be used as a syntactic sugar around your
@@ -446,7 +447,7 @@ the constraint:
 
 -  **tuple** The outcome must fall within the range specified by the
    first and second elements. Only valid for values that can be compared
-   using ``__lt__`` (e.g. int, float, str).
+   using ``__lt__`` (e.g. int, float, str).
 -  **single value** The outcome must equal this given value.
 -  **list of values** The outcome must be within the list.
 -  **list of tuples** The outcome must fall within one of the ranges
@@ -461,9 +462,9 @@ or incomplete depending on the protocol but it is always valid). Agents
 can then respond with one of the values defined by the ``Response``
 enumeration in the ``outcomes`` module. Currently these are:
 
--  **ACCEPT\_OFFER** Accepts the offer.
--  **REJECT\_OFFER** Rejects the offer.
--  **END\_NEGOTIATION** This implies rejection of the offer and further
+-  **ACCEPT_OFFER** Accepts the offer.
+-  **REJECT_OFFER** Rejects the offer.
+-  **END_NEGOTIATION** This implies rejection of the offer and further
    more indicates that the agent is not willing to continue with the
    negotiation. The protocol is free to handle this situation. It may
    just end the negotiation with no agreement, may just remove the agent
@@ -471,7 +472,7 @@ enumeration in the ``outcomes`` module. Currently these are:
    (if that makes sense) or just gives the agent a second chance by
    treating it as just a ``REJECT_OFFER`` case. In most case the first
    response (just end the negotiation) is expected.
--  **NO\_RESPONSE** Making no response at all. This is usually not
+-  **NO_RESPONSE** Making no response at all. This is usually not
    allowed by negotiation protocols and will be considered a protocol
    violation in most cases. Nevertheless, negotiation protocols are free
    to handle this response when it arise in any way.
@@ -507,7 +508,7 @@ type definitions:
    implementation detail that should not be relied upon as it is likely
    that the probabilistic framework will be changed in the future to
    enhance the flexibility of the package and its integration with other
-   probabilistic modeling packages (e.g. PyMC3).
+   probabilistic modeling packages (e.g. PyMC3).
 
 -  ``UtilityValue`` This is the input and output type used whenever a
    utility value is to be represented in the whole package. It is
@@ -540,7 +541,7 @@ Utility functions are entities that take an ``Outcome`` and return its
 the literature. In this package, the base of all utiliy functions is the
 ``UtilityFunction`` class which is defined in the ``utilities`` module.
 It behaves like a standard python ``Callable`` which can be called with
-a single ``Outcome`` object (i.e. a dictionary, list, tuple etc
+a single ``Outcome`` object (i.e. a dictionary, list, tuple etc
 representing an outcome) and returns a ``UtilityValue``. This allows
 utility functions to return a distribution instead of a single utility
 value.
@@ -633,11 +634,9 @@ The ``LinearAggregationUtilityFunction`` class represents a function
 that linearly aggregate utilities assigned to issues in the given
 outcome which can be defined mathematically as follows:
 
-.. raw:: latex
-
-   \begin{equation}
-   U(o) = \sum_{i=0}^{\left|o\right|}{w_i\times g_i(o_i)}
-   \end{equation}
+:raw-latex:`\begin{equation}
+U(o) = \sum_{i=0}^{\left|o\right|}{w_i\times g_i(o_i)}
+\end{equation}`
 
 where :math:`o` is an outcome, :math:`w` is a real-valued weight vector
 and :math:`g` is a vector of functions each mapping one issue of the
@@ -695,7 +694,7 @@ And if delivery was accompanied with an increase in price
 
 
 It is clear that this buyer will still accept that increase of price
-from ``'1.0'`` to ``'1.8``' if it is accompanied with the delivery
+from ``'1.0'`` to ``'1.8``\ ’ if it is accompanied with the delivery
 option.
 
 Nonlinear Aggregation Utility Functions
@@ -705,16 +704,14 @@ A direct generalization of the linear agggregation utility functions is
 provided by the ``NonLinearAggregationUtilityFunction`` which represents
 the following function:
 
-.. raw:: latex
-
-   \begin{equation}
-   U(o) = f\left(\left\{{g_i(o_i)}\right\}\right)
-   \end{equation}
+:raw-latex:`\begin{equation}
+U(o) = f\left(\left\{{g_i(o_i)}\right\}\right)
+\end{equation}`
 
 where :math:`g` is a vector of functions defined as before and :math:`f`
 is a mapping from a vector of real-values to a single real value.
 
-For example, a seller's utility can be defined as:
+For example, a seller’s utility can be defined as:
 
 .. code:: ipython3
 
@@ -821,7 +818,7 @@ There are three nonlinear functions in this example:
 -  A local function which gives a utility of ``2.0`` to any outcome for
    which the first issue (issue ``0``) has a value between
    ``1.0 and``\ 2.0\ ``and the second issue (issue``\ 1\ ``) has a value between``\ 1.0\ ``and``\ 2.0\ ``which is represented as:``\ {0:
-   (1.0, 2.0), 1: (1.0, 2.0)}\`\`
+   (1.0, 2.0), 1: (1.0, 2.0)}`\`
 -  A second local function which gives a utility that depends on both
    the third and first issues ``(lambda x: 2 * x[2] + x[0]``) on the
    range ``{0: (1.4, 2.0), 2: (2.0, 3.0)}``.
@@ -929,7 +926,6 @@ module for more details
     ['UtilityDistribution',
      'UtilityValue',
      'UtilityFunction',
-     'UtilityFunctionProxy',
      'ConstUFun',
      'LinDiscountedUFun',
      'ExpDiscountedUFun',
@@ -940,10 +936,16 @@ module for more details
      'NonlinearHyperRectangleUtilityFunction',
      'ComplexWeightedUtilityFunction',
      'ComplexNonlinearUtilityFunction',
+     'LinearUtilityFunction',
      'IPUtilityFunction',
      'pareto_frontier',
      'make_discounted_ufun',
-     'normalize']
+     'normalize',
+     'JavaUtilityFunction',
+     'RandomUtilityFunction',
+     'INVALID_UTILITY',
+     'outcome_with_utility',
+     'utility_range']
 
 
 Negotiators
@@ -968,7 +970,24 @@ Classes exposed in this module end with either ``Agent`` or ``Mixin``
 
 .. parsed-literal::
 
-    ['Negotiator', 'NegotiatorProxy', 'AspirationMixin']
+    ['Negotiator',
+     'AspirationMixin',
+     'Controller',
+     'PassThroughNegotiator',
+     'EvaluatorMixin',
+     'RealComparatorMixin',
+     'BinaryComparatorMixin',
+     'NLevelsComparatorMixin',
+     'RankerMixin',
+     'RankerWithWeightsMixin',
+     'SorterMixin',
+     'EvaluatorNegotiator',
+     'RealComparatorNegotiator',
+     'BinaryComparatorNegotiator',
+     'NLevelsComparatorNegotiator',
+     'RankerNegotiator',
+     'RankerWithWeightsNegotiator',
+     'SorterNegotiator']
 
 
 
@@ -977,7 +996,7 @@ To build your negotiator, you need to inherit from one class ending with
 mixins you need implementing their abstract functions (if any) in turn.
 
 Negotiators related to a specific negotiation mechanism are implemented
-in that mechanism's module. For example, negotiators designed for the
+in that mechanism’s module. For example, negotiators designed for the
 Stacked Alternating Offers Mechanism are found in the ``sao`` module.
 
 Agent (the base class of all negotiation agents)
@@ -997,8 +1016,7 @@ methods that MUST be implemented by any agent you inherit from it:
 
     ['SAOState',
      'SAOMechanism',
-     'SAOMechanismProxy',
-     'SAONegotiatorProxy',
+     'SAOProtocol',
      'SAONegotiator',
      'RandomNegotiator',
      'LimitedOutcomesNegotiator',
@@ -1007,7 +1025,12 @@ methods that MUST be implemented by any agent you inherit from it:
      'ToughNegotiator',
      'OnlyBestNegotiator',
      'NaiveTitForTatNegotiator',
-     'NiceNegotiator']
+     'SimpleTitForTatNegotiator',
+     'NiceNegotiator',
+     'SAOController',
+     'JavaSAONegotiator',
+     'PassThroughSAONegotiator',
+     'SAOSyncController']
 
 
 
@@ -1042,7 +1065,7 @@ provide the following basic functionalities:
 
       <div class="alert alert-block alert-warning">
 
-    Protocols must extend any callback (i.e. call the ``super()``
+    Protocols must extend any callback (i.e. call the ``super()``
    version) instead of overriding them as they may do some actions to
    ensure correct processing.
 
@@ -1085,7 +1108,7 @@ You can create a new protocol by overriding a single function in the
             self.current_offerer = None
             self.n_accepting_agents = 0
     
-        def step_(self):
+        def round(self):
             end_negotiation = False
             n_agents = len(self.negotiators)
             accepted = False

@@ -8,8 +8,5 @@ Base Modules
     modules/mechanisms
     modules/common
     modules/negotiators
-    modules/sao
     modules/genius
-    modules/situated
-    modules/events
 

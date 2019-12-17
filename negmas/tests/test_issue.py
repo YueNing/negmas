@@ -8,9 +8,6 @@ def test_type(hamlet, cissue, dissue):
     assert cissue.type == "continuous", "Continuous type passes"
     assert dissue.type == "discrete", "int passes"
     assert hamlet.type == "discrete", "string list passes"
-    hamlet.values = (1, 2)
-    with pytest.raises(ValueError):
-        print(hamlet.type)
 
 
 def test_is_continuous(cissue, dissue, hamlet):
@@ -31,16 +28,16 @@ def test_string_conversion(uissue, hamlet):
 
 
 def test_cartinatlity(cissue, dissue, hamlet):
-    assert cissue.cardinality() == -1
-    assert hamlet.cardinality() == 5
-    assert dissue.cardinality() == 10
+    assert cissue.cardinality == float("inf")
+    assert hamlet.cardinality == 5
+    assert dissue.cardinality == 10
 
 
 def test_n_outcomes(cissue, dissue, hamlet):
-    assert Issue.n_outcomes([cissue, dissue, hamlet]) == -1
-    assert Issue.n_outcomes([dissue, hamlet]) == 50
-    assert Issue.n_outcomes([dissue]) == 10
-    assert Issue.n_outcomes([]) == 1
+    assert Issue.num_outcomes([cissue, dissue, hamlet]) == float("inf")
+    assert Issue.num_outcomes([dissue, hamlet]) == 50
+    assert Issue.num_outcomes([dissue]) == 10
+    assert Issue.num_outcomes([]) == 1
 
 
 def test_rand(cissue, dissue, hamlet, bissue):
@@ -73,12 +70,12 @@ def test_issue_generation_defaults():
     assert len(issues) == 3
     assert (
         issues[0].is_continuous()
-        and issues[0].values[0] == 0.0
-        and issues[0].values[1] == 1.0
+        and issues[0]._values[0] == 0.0
+        and issues[0]._values[1] == 1.0
     )
     for i, o in enumerate(options):
-        assert issues[1].values[i] == o
-    assert issues[2].values == 5
+        assert issues[1]._values[i] == o
+    assert issues[2]._values == (0, 4)
     for i, issue in enumerate(issues):
         assert str(i) == issue.name
 
@@ -88,7 +85,7 @@ def test_issue_generation_multiples():
     assert len(issues_) == 10
     for i, issue in enumerate(issues_):
         assert issue.name.startswith(str(i))
-        assert issue.values == 5
+        assert issue._values == (0, 4)
 
 
 if __name__ == "__main__":

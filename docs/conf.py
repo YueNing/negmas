@@ -20,7 +20,7 @@
 #
 
 import negmas
-
+import os
 import sphinx_rtd_theme
 
 # -- General configuration ---------------------------------------------
@@ -35,7 +35,6 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.viewcode',
               'sphinx.ext.coverage',
               'sphinxcontrib.napoleon',
-              'sphinx.ext.mathjax',
               'sphinx.ext.githubpages',
               'sphinx.ext.graphviz',
               'sphinx_autodoc_annotation',
@@ -44,7 +43,7 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx_automodapi.automodapi',
               'sphinx.ext.intersphinx',
               'sphinx_automodapi.smart_resolver',
-              #'sphinxcontrib.fulltoc',
+              # 'sphinxcontrib.fulltoc',
               'nb2plots',
               #'nbsphinx',
               'sphinx.ext.mathjax',
@@ -114,8 +113,18 @@ todo_include_todos = False
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+html_context = {
+    'css_files': [
+        '_static/theme_overrides.css',  # override wide tables in RTD theme
+        ],
+     }
 
-html_theme = "sphinx_rtd_theme"
+# on_rtd is whether we are on readthedocs.org
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+
+if not on_rtd:  # only set the theme if we're building docs locally
+    html_theme = 'sphinx_rtd_theme'
+
 html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 # theme options for sphinx_rtd_theme
 html_theme_options = {
@@ -217,3 +226,4 @@ html_domain_indices = True
 
 automodsumm_inherited_members = True
 
+# mathjax_path =

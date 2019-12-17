@@ -29,7 +29,9 @@ from negmas import (
     AgentMechanismInterface,
     MechanismState,
     MappingUtilityFunction,
+    WorldMonitor,
 )
+from negmas.events import EventSink, Event, EventSource
 from negmas.helpers import ConfigReader, unique_name
 from negmas.situated import World, Agent, Action, Breach, Contract
 
@@ -125,7 +127,7 @@ class DummyAgent(Agent):
         req_id: Optional[str],
     ) -> Optional[Negotiator]:
         negotiator = AspirationNegotiator(
-            ufun=MappingUtilityFunction(mapping=lambda x: 1.0 - x["i1"] / 10.0)
+            ufun=MappingUtilityFunction(mapping=lambda x: 1.0 - x[0] / 10.0)
         )
         return negotiator
 
@@ -396,6 +398,21 @@ def test_agent_checkpoint_in_world(tmp_path):
         assert a.id == b.id
 
         b.step_()
+
+
+class MyMonitor(EventSink):
+    def on_event(self, event: Event, sender: EventSource):
+        assert event.type == "agent-joined"
+
+
+def test_world_monitor():
+    monitor = MyMonitor()
+    world = DummyWorld(n_steps=10)
+    world.register_listener("agent-joined", listener=monitor)
+    world.join(DummyAgent("A1"))
+    world.join(DummyAgent("A2"))
+    assert len(world.agents) == 2
+    world.run()
 
 
 if __name__ == "__main__":

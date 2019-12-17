@@ -91,6 +91,11 @@ class Negotiator(NamedObject, Notifiable, ABC):
 
     ufun = utility_function
 
+    @property
+    def parent(self) -> "Controller":
+        """Returns the parent controller"""
+        return self.__parent
+
     def before_death(self, cntxt: Dict[str, Any]) -> bool:
         """Called whenever the parent is about to kill this negotiator. It should return False if the negotiator
         does not want to be killed but the controller can still force-kill it"""
@@ -108,8 +113,6 @@ class Negotiator(NamedObject, Notifiable, ABC):
         than the utility of the outcome.
 
         """
-        if self.reserved_value is None:
-            return True
         return self._utility_function(outcome) >= self.reserved_value
 
     @property
@@ -137,13 +140,8 @@ class Negotiator(NamedObject, Notifiable, ABC):
     def reserved_value(self):
         """Reserved value is what the agent gets if no agreement is reached in the negotiation."""
         if self._utility_function is None:
-            return None
-        if self._utility_function.reserved_value is not None:
-            return self._utility_function.reserved_value
-        try:
-            return self._utility_function(None)
-        except:
-            return None
+            return float("-inf")
+        return self._utility_function.reserved_value
 
     @property
     def capabilities(self) -> Dict[str, Any]:
@@ -339,7 +337,7 @@ class Negotiator(NamedObject, Notifiable, ABC):
 class PassThroughNegotiator(Negotiator):
     """
     A negotiator that can be used to pass all method calls to a parent (Controller).
-    
+
     It uses magic dunder methods to implement a general way of passing calls to the parent. This method is slow.
 
     It is recommended to implement a PassThrough*Negotiator for each mechanism that does this passing explicitly which
@@ -492,7 +490,7 @@ class Controller(NamedObject):
         negotiator, cntxt = self._negotiators.get(negotiator_id, (None, None))
         if negotiator is None:
             return
-        response = negotiator.on_kill(cntxt=cntxt)
+        response = negotiator.before_death(cntxt=cntxt)
         if response or force:
             self._negotiators.pop(negotiator_id, None)
 

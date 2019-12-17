@@ -1,3 +1,4 @@
+from datetime import timedelta
 from pathlib import Path, PosixPath
 
 from hypothesis import given, example, settings
@@ -104,7 +105,7 @@ def test_can_run_from_checkpoint_(tmp_path, single_checkpoint, checkpoint_every,
     copy=st.booleans(),
     fork_after_reset=st.booleans(),
 )
-@example(tmp_path=PosixPath('/tmp/pytest-of-naodongbanana/pytest-16/test_can_run_from_checkpoint_0'), checkpoint_every=1, exist_ok=False, copy=True, fork_after_reset=False)
+@settings(deadline=20000, max_examples=100)
 def test_can_run_from_checkpoint(tmp_path, checkpoint_every, exist_ok, copy, fork_after_reset):
     import shutil
     new_folder: Path = tmp_path / unique_name("empty", sep="")
@@ -134,7 +135,7 @@ def test_can_run_from_checkpoint(tmp_path, checkpoint_every, exist_ok, copy, for
     )
     ufuns = MappingUtilityFunction.generate_random(n_negotiators, outcomes=n_outcomes)
     for i in range(n_negotiators):
-        mechanism.add(AspirationNegotiator(name=f"agent{i}"), ufun=ufuns[i])
+        mechanism.add(AspirationNegotiator(name=f"agent{i}"), ufun=ufuns[i], aspiration_type="conceder")
 
     mechanism.run()
     files = list(new_folder.glob("*"))

@@ -265,22 +265,20 @@ def unique_name(
     Examples:
 
         >>> a = unique_name('')
-        >>> len(a) == 8 + 1 + 6 + 8
+        >>> len(a) == 8 + 1 + 6 + 8 + 6
         True
 
     Returns:
         str: The unique name.
 
     """
+    _time, rand_part = "", ""
     if rand_digits > 0:
-        characters = string.ascii_letters + string.digits
-        rand_part = "".join(random.choice(characters) for _ in range(rand_digits))
-    else:
-        rand_part = ""
+        rand_part = "".join(
+            random.choices(string.digits + string.ascii_letters, k=rand_digits)
+        )
     if add_time:
-        _time = datetime.datetime.now().strftime("%Y%m%dH%H%M%S")
-    else:
-        _time = ""
+        _time = datetime.datetime.now().strftime("%Y%m%dH%H%M%S%f")
     sub = _time + rand_part
     if len(sub) == 0:
         return base
@@ -576,6 +574,24 @@ class Distribution(object):
         return result
 
     __repr__ = __str__
+
+    def __eq__(self, other):
+        return float(self) == other
+
+    def __ne__(self, other):
+        return float(self) == other
+
+    def __lt__(self, other):
+        return float(self) == other
+
+    def __le__(self, other):
+        return float(self) == other
+
+    def __gt__(self, other):
+        return float(self) == other
+
+    def __ge__(self, other):
+        return float(self) == other
 
     def __sub__(self, other):
         return float(self) - other
@@ -949,6 +965,18 @@ def humanize_time(secs, align=False, always_show_all_units=False):
     return ":".join(parts)
 
 
+class NpEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        else:
+            return super(NpEncoder, self).default(obj)
+
+
 def dump(d: Any, file_name: Union[str, os.PathLike, pathlib.Path]) -> None:
     """
     Saves an object depending on the extension of the file given. If the filename given has no extension,
@@ -962,6 +990,7 @@ def dump(d: Any, file_name: Union[str, os.PathLike, pathlib.Path]) -> None:
 
         - Supported formats are json, yaml
         - If None is given, the file will be created but will be empty
+        - Numpy arrays will be converted to lists before being dumped
 
     """
     file_name = pathlib.Path(file_name).expanduser().absolute()
@@ -971,10 +1000,9 @@ def dump(d: Any, file_name: Union[str, os.PathLike, pathlib.Path]) -> None:
     if d is None:
         with open(file_name, "w") as f:
             pass
-
     if file_name.suffix == ".json":
         with open(file_name, "w") as f:
-            json.dump(d, f, sort_keys=True, indent=2)
+            json.dump(d, f, sort_keys=True, indent=2, cls=NpEncoder)
     elif file_name.suffix == ".yaml":
         with open(file_name, "w") as f:
             yaml.safe_dump(d, f)

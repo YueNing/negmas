@@ -165,3 +165,6 @@ wily-report.html
 
 # vs code setting
 .vscode
+distold
+distold/*
+dist/*

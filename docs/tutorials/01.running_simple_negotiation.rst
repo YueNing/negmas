@@ -22,20 +22,23 @@ You can use these to run negotiations as follows:
 
 .. parsed-literal::
 
-    {'agreement': (4,),
+    {'agreement': (9,),
      'broken': False,
-     'current_offer': (4,),
-     'current_proposer': 'a4-3c56bcb2-0278-45ee-b95b-c696d6a11a54',
+     'current_offer': (9,),
+     'current_proposer': 'a3-079be4c1-5322-4ef5-b664-307337d4e252',
      'error_details': '',
      'has_error': False,
      'n_acceptances': 0,
      'n_negotiators': 5,
-     'relative_time': 0.96,
+     'new_offers': [],
+     'relative_time': 0.09,
+     'results': None,
      'running': False,
      'started': True,
-     'step': 95,
-     'time': 0.012729342999989512,
-     'timedout': False}
+     'step': 8,
+     'time': 0.004660927999999842,
+     'timedout': False,
+     'waiting': False}
 
 
 Negotations end with a status that shows you what happens. In the above
@@ -64,26 +67,29 @@ instead of a ``Mechanism`` object
 
 .. parsed-literal::
 
-    {'agreement': (4,),
+    {'agreement': (9,),
      'broken': False,
-     'current_offer': (4,),
-     'current_proposer': 'a4-a80ace99-7c18-4f0d-b9b7-9ab32f4b91f9',
+     'current_offer': (9,),
+     'current_proposer': 'a3-107c35bf-283d-49b2-8b1b-650e253df20c',
      'error_details': '',
      'has_error': False,
      'n_acceptances': 0,
      'n_negotiators': 5,
-     'relative_time': 0.96,
+     'new_offers': [],
+     'relative_time': 0.09,
+     'results': None,
      'running': False,
      'started': True,
-     'step': 95,
-     'time': 0.012701435999986188,
-     'timedout': False}
+     'step': 8,
+     'time': 0.005280838000000898,
+     'timedout': False,
+     'waiting': False}
 
 
 As you can see, we got the same output.\ ``Protocol`` is an alias of
 ``Mechanism`` in NegMAS.
 
-Let's try a more meaningful situation: Assume we have a buyer and a
+Let’s try a more meaningful situation: Assume we have a buyer and a
 seller who are negotiating about a business transaction in which the
 buyer wants to maximize his profit while the seller wants to minimize
 her cost. They both would like to transact on as much as possible of the
@@ -97,7 +103,7 @@ This can be modeled in the following negotiation:
     from negmas.utilities import LinearUtilityAggregationFunction as LUFun
     issues = [Issue(name='price', values=10), Issue(name='quantity', values=10)
               , Issue(name='delivery_time', values=10)]
-    session = SAOMechanism(issues=issues, n_steps=5)
+    session = SAOMechanism(issues=issues, n_steps=20)
     
     buyer_utility = normalize(ufun=LUFun(issue_utilities={'price': lambda x: 9.0 - x
                                            , 'quantity': lambda x: 0.2 * x
@@ -117,41 +123,57 @@ This can be modeled in the following negotiation:
 
 .. parsed-literal::
 
-    {'agreement': {'delivery_time': 8, 'price': 9, 'quantity': 9},
+    {'agreement': (9, 9, 8),
      'broken': False,
-     'current_offer': {'delivery_time': 8, 'price': 9, 'quantity': 9},
-     'current_proposer': 'seller-bb1ebd4e-b6ea-44ed-a819-2e9d174d0f85',
+     'current_offer': (9, 9, 8),
+     'current_proposer': 'seller-7ddbb9cf-1d27-47b0-98f5-66a480ba52b0',
      'error_details': '',
      'has_error': False,
      'n_acceptances': 0,
      'n_negotiators': 2,
-     'relative_time': 1.2,
+     'new_offers': [],
+     'relative_time': 0.9,
+     'results': None,
      'running': False,
      'started': True,
-     'step': 5,
-     'time': 0.0006966750000287902,
-     'timedout': False}
+     'step': 17,
+     'time': 0.003675460000000186,
+     'timedout': False,
+     'waiting': False}
 
 
-In this run, we can see that the agreement was on a high price (9) which
-is preferred by the seller but with a delivery time of (8) which is
-preferred by the buyer. Negotiation took all of the allowed *5* steps.
+In this run, we can see that the agreement was on a high price (*9*)
+which is preferred by the seller but with a delivery time of *8* which
+is preferred by the buyer. Negotiation took *17* steps out of the
+allowed *20* (*90%* of the available time)
 
 We can check the negotiation history as well
 
 .. code:: ipython3
 
     for i, _ in enumerate(session.history):
-        print(f'{i:03}: {_.current_proposer} offered {_.current_offer}')
+        print(f'{i:03}: {_.new_offers}')
 
 
 .. parsed-literal::
 
-    000: buyer-a7cd6341-d966-42d2-a206-2104750f56c5 offered {'price': 0, 'quantity': 9, 'delivery_time': 9}
-    001: seller-bb1ebd4e-b6ea-44ed-a819-2e9d174d0f85 offered {'price': 9, 'quantity': 7, 'delivery_time': 0}
-    002: buyer-a7cd6341-d966-42d2-a206-2104750f56c5 offered {'price': 2, 'quantity': 7, 'delivery_time': 9}
-    003: seller-bb1ebd4e-b6ea-44ed-a819-2e9d174d0f85 offered {'price': 9, 'quantity': 9, 'delivery_time': 8}
-    004: seller-bb1ebd4e-b6ea-44ed-a819-2e9d174d0f85 offered {'price': 9, 'quantity': 9, 'delivery_time': 8}
+    000: [('buyer-521a6d50-9468-48ec-ae4d-548b52bd8849', (0, 9, 9)), ('seller-7ddbb9cf-1d27-47b0-98f5-66a480ba52b0', (9, 9, 0))]
+    001: [('buyer-521a6d50-9468-48ec-ae4d-548b52bd8849', (0, 9, 9)), ('seller-7ddbb9cf-1d27-47b0-98f5-66a480ba52b0', (9, 9, 0))]
+    002: [('buyer-521a6d50-9468-48ec-ae4d-548b52bd8849', (0, 9, 9)), ('seller-7ddbb9cf-1d27-47b0-98f5-66a480ba52b0', (9, 9, 0))]
+    003: [('buyer-521a6d50-9468-48ec-ae4d-548b52bd8849', (0, 9, 9)), ('seller-7ddbb9cf-1d27-47b0-98f5-66a480ba52b0', (9, 9, 0))]
+    004: [('buyer-521a6d50-9468-48ec-ae4d-548b52bd8849', (0, 9, 9)), ('seller-7ddbb9cf-1d27-47b0-98f5-66a480ba52b0', (9, 9, 0))]
+    005: [('buyer-521a6d50-9468-48ec-ae4d-548b52bd8849', (0, 9, 9)), ('seller-7ddbb9cf-1d27-47b0-98f5-66a480ba52b0', (9, 9, 0))]
+    006: [('buyer-521a6d50-9468-48ec-ae4d-548b52bd8849', (0, 8, 9)), ('seller-7ddbb9cf-1d27-47b0-98f5-66a480ba52b0', (9, 8, 0))]
+    007: [('buyer-521a6d50-9468-48ec-ae4d-548b52bd8849', (0, 7, 9)), ('seller-7ddbb9cf-1d27-47b0-98f5-66a480ba52b0', (9, 7, 0))]
+    008: [('buyer-521a6d50-9468-48ec-ae4d-548b52bd8849', (0, 5, 9)), ('seller-7ddbb9cf-1d27-47b0-98f5-66a480ba52b0', (9, 5, 0))]
+    009: [('buyer-521a6d50-9468-48ec-ae4d-548b52bd8849', (1, 8, 9)), ('seller-7ddbb9cf-1d27-47b0-98f5-66a480ba52b0', (9, 8, 1))]
+    010: [('buyer-521a6d50-9468-48ec-ae4d-548b52bd8849', (1, 5, 9)), ('seller-7ddbb9cf-1d27-47b0-98f5-66a480ba52b0', (9, 5, 1))]
+    011: [('buyer-521a6d50-9468-48ec-ae4d-548b52bd8849', (2, 7, 9)), ('seller-7ddbb9cf-1d27-47b0-98f5-66a480ba52b0', (9, 7, 2))]
+    012: [('buyer-521a6d50-9468-48ec-ae4d-548b52bd8849', (3, 7, 9)), ('seller-7ddbb9cf-1d27-47b0-98f5-66a480ba52b0', (9, 7, 3))]
+    013: [('buyer-521a6d50-9468-48ec-ae4d-548b52bd8849', (4, 6, 9)), ('seller-7ddbb9cf-1d27-47b0-98f5-66a480ba52b0', (9, 6, 4))]
+    014: [('buyer-521a6d50-9468-48ec-ae4d-548b52bd8849', (6, 8, 9)), ('seller-7ddbb9cf-1d27-47b0-98f5-66a480ba52b0', (9, 8, 6))]
+    015: [('buyer-521a6d50-9468-48ec-ae4d-548b52bd8849', (8, 9, 9)), ('seller-7ddbb9cf-1d27-47b0-98f5-66a480ba52b0', (9, 9, 8))]
+    016: []
 
 
 We can even plot the complete negotiation history and visually see how
@@ -171,17 +193,16 @@ What happens if the seller was much more interested in delivery time.
 
 Firstly, what do you expect?
 
-Given that delivery time becomes a more important issue now, the buyer
-will get more utility points by allowing the price to go up given that
+Given that delivery time becomes a more important issue now, the seller
+will get more utility points by allowing the price to go down given that
 the delivery time can be made earlier. This means that we should expect
-the delivery time to go down in the agreement and the price to go up if
-it can. Let's see what happens:
+the delivery time and price to go down. Let’s see what happens:
 
 .. code:: ipython3
 
-    session = SAOMechanism(issues=issues, n_steps=5)
+    session = SAOMechanism(issues=issues, n_steps=50)
     
-    buyer_utility = normalize(ufun=LUFun(issue_utilities={'price': lambda x: x
+    seller_utility = normalize(ufun=LUFun(issue_utilities={'price': lambda x: x
                                            , 'quantity': lambda x: 0.2 * x
                                            , 'delivery_time': lambda x: 9.0 - x}
                                          , weights = {'price': 1.0, 'quantity': 1.0, 'delivery_time': 10.0})
@@ -194,20 +215,23 @@ it can. Let's see what happens:
 
 .. parsed-literal::
 
-    {'agreement': {'delivery_time': 0, 'price': 9, 'quantity': 9},
+    {'agreement': (5, 4, 5),
      'broken': False,
-     'current_offer': {'delivery_time': 0, 'price': 9, 'quantity': 9},
-     'current_proposer': 'buyer-89277840-c43d-4bc3-b7aa-9910efca2130',
+     'current_offer': (5, 4, 5),
+     'current_proposer': 'seller-49534369-8d93-42b7-b34e-b3f33083bc6d',
      'error_details': '',
      'has_error': False,
      'n_acceptances': 0,
      'n_negotiators': 2,
-     'relative_time': 0.6,
+     'new_offers': [],
+     'relative_time': 0.9,
+     'results': None,
      'running': False,
      'started': True,
-     'step': 2,
-     'time': 0.0003362379999884979,
-     'timedout': False}
+     'step': 44,
+     'time': 0.010532425000000956,
+     'timedout': False,
+     'waiting': False}
 
 
 We can check it visually as well:
@@ -222,62 +246,60 @@ We can check it visually as well:
 
 
 It is clear that the new ufuns transformed the problem. Now we have a
-single outcome at the pareto front. The agreement is on it (*0.0*
-utility points).
+single outcome at the pareto front. Nevertheless, there is money on the
+table as the negotiators did not agree on an outcome on the pareto
+front.
 
-What happens if we repeat the earlier neotiation but with a much longer
-negotiation time:
+What happens if we give them more time to negotiate:
 
 .. code:: ipython3
 
-    session = SAOMechanism(issues=issues, n_steps=2000)
-    
-    buyer_utility = normalize(ufun=LUFun(issue_utilities={'price': lambda x: 9.0 - x
-                                           , 'quantity': lambda x: 0.2 * x
-                                           , 'delivery_time': lambda x: x})
-                             , outcomes=session.outcomes)
+    session = SAOMechanism(issues=issues, n_steps=5000)
     
     seller_utility = normalize(ufun=LUFun(issue_utilities={'price': lambda x: x
                                            , 'quantity': lambda x: 0.2 * x
-                                           , 'delivery_time': lambda x: 9.0 - x})
-                               , outcomes=session.outcomes)
-    
+                                           , 'delivery_time': lambda x: 9.0 - x}
+                                         , weights = {'price': 1.0, 'quantity': 1.0, 'delivery_time': 10.0})
+                             , outcomes=session.outcomes)
     
     session.add(AspirationNegotiator(name='buyer'), ufun=buyer_utility)
     session.add(AspirationNegotiator(name='seller'), ufun=seller_utility)
-    
-    pprint(session.run().__dict__)
+    session.run()
     session.plot(plot_outcomes=False)
 
 
-.. parsed-literal::
 
-    {'agreement': {'delivery_time': 9, 'price': 9, 'quantity': 9},
-     'broken': False,
-     'current_offer': {'delivery_time': 9, 'price': 9, 'quantity': 9},
-     'current_proposer': 'seller-6f8c4e96-6e66-43aa-9045-431bd587534b',
-     'error_details': '',
-     'has_error': False,
-     'n_acceptances': 0,
-     'n_negotiators': 2,
-     'relative_time': 0.8225,
-     'running': False,
-     'started': True,
-     'step': 1644,
-     'time': 0.2121083879999901,
-     'timedout': False}
+.. image:: 01.running_simple_negotiation_files/01.running_simple_negotiation_16_0.png
 
 
+It did not help much! The two agents adjusted their concession to match
+the new time and they did not get to the Pareto-front.
 
-.. image:: 01.running_simple_negotiation_files/01.running_simple_negotiation_16_1.png
+Let’s allow them to concede faster by setting their ``aspiration_type``
+to *linear* instead of the default *boulware*:
+
+.. code:: ipython3
+
+    session = SAOMechanism(issues=issues, n_steps=5000)
+    
+    seller_utility = normalize(ufun=LUFun(issue_utilities={'price': lambda x: x
+                                           , 'quantity': lambda x: 0.2 * x
+                                           , 'delivery_time': lambda x: 9.0 - x}
+                                         , weights = {'price': 1.0, 'quantity': 1.0, 'delivery_time': 10.0})
+                             , outcomes=session.outcomes)
+    
+    session.add(AspirationNegotiator(name='buyer', aspiration_type="linear"), ufun=buyer_utility)
+    session.add(AspirationNegotiator(name='seller', aspiration_type="linear"), ufun=seller_utility)
+    session.run()
+    session.plot(plot_outcomes=False)
 
 
-Given the longer negotiation time, the buyer and the seller can both
-take a tougher stance conceding as slowly as possible (taking *1644*
-steps out of the available *2000* instead of just 5 as before). As a
-result they again achieve a point exactly on the pareto-front. Moreover,
-this point happens to maximize the *welfare* defined as the sum of the
-utility received by both partners.
+
+.. image:: 01.running_simple_negotiation_files/01.running_simple_negotiation_18_0.png
+
+
+It is clear that longer negotiation time, and faster concession did not
+help the negotiators get to a point on the pareto-front.
 
 
 

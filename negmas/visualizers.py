@@ -1,3 +1,5 @@
+"""Implements Visualizer components for all built-in objects in NegMAS as well as base-classes for adding visualization
+to any custom components (or custom visualizers for built-in components)  compatible with the Dash-based visualizer."""
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
@@ -9,7 +11,8 @@ import uuid
 import pandas as pd
 
 __all__ = [
-    "Visualizer", "MechanismVisualizer", "register_visualizer", "visualizer", "visualizer_type", "visualizer_type_name", "Widget"
+    "Visualizer", "MechanismVisualizer", "register_visualizer", "visualizer", "visualizer_type", "visualizer_type_name"
+    , "Widget"
 ]
 
 

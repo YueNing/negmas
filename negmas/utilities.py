@@ -39,6 +39,7 @@ from typing import (
     Iterable,
     Tuple,
     Collection,
+    Type,
 )
 from typing import TYPE_CHECKING
 
@@ -60,6 +61,7 @@ from negmas.outcomes import (
     outcome_is_valid,
     OutcomeType,
     outcome_as_dict,
+    outcome_as_tuple,
 )
 
 if TYPE_CHECKING:
@@ -80,6 +82,7 @@ __all__ = [
     "NonlinearHyperRectangleUtilityFunction",
     "ComplexWeightedUtilityFunction",
     "ComplexNonlinearUtilityFunction",
+    "LinearUtilityFunction",
     "IPUtilityFunction",
     "pareto_frontier",
     "make_discounted_ufun",
@@ -87,6 +90,8 @@ __all__ = [
     "JavaUtilityFunction",
     "RandomUtilityFunction",
     "INVALID_UTILITY",
+    "outcome_with_utility",
+    "utility_range",
 ]
 
 INVALID_UTILITY = float("-inf")
@@ -129,7 +134,7 @@ class UtilityFunction(ABC, NamedObject):
     Args:
 
         name (str): Name of the utility function. If None, a random name will be given.
-        reserved_value(float): The value to return if the input offer to `apply` is None
+        reserved_value(float): The value to return if the input offer to `__call__` is None
 
     """
 
@@ -137,7 +142,7 @@ class UtilityFunction(ABC, NamedObject):
         self,
         name: Optional[str] = None,
         ami: AgentMechanismInterface = None,
-        reserved_value: Optional[UtilityValue] = None,
+        reserved_value: UtilityValue = float("-inf"),
     ) -> None:
         super().__init__(name=name)
         self.reserved_value = reserved_value
@@ -190,7 +195,7 @@ class UtilityFunction(ABC, NamedObject):
     def to_genius(
         cls, u: "UtilityFunction", issues: List[Issue], file_name: str, **kwargs
     ):
-        """Exports a utility function from a GENIUS XML file.
+        """Exports a utility function to a GENIUS XML file.
 
         Args:
 
@@ -246,7 +251,7 @@ class UtilityFunction(ABC, NamedObject):
             output += "</objective>\n"
             if discount_factor is not None:
                 output += f'<discount_factor value="{discount_factor}" />\n'
-        if u.reserved_value is not None and "<reservation value" not in output:
+        if u.reserved_value != float("-inf") and "<reservation value" not in output:
             output += f'<reservation value="{u.reserved_value}" />\n'
         if "</utility_space>" not in output:
             output += "</utility_space>\n"
@@ -486,7 +491,7 @@ class UtilityFunction(ABC, NamedObject):
                             domain_issues is not None
                             and not domain_issues[myname].is_uncountable()
                         ):
-                            n_steps = domain_issues[myname].cardinality()
+                            n_steps = domain_issues[myname].cardinality
                             delta = (n_steps - 1) / (upper - lower)
                             value_shift = -lower * delta
                             value_scale = delta
@@ -770,7 +775,7 @@ class UtilityFunction(ABC, NamedObject):
                 u = ComplexWeightedUtilityFunction(
                     ufuns=[u, uhyper], weights=[1.0, 1.0]
                 )
-        if reserved_value is not None and not ignore_reserved and u is not None:
+        if not ignore_reserved and u is not None:
             u.reserved_value = reserved_value
         if ignore_discount:
             discount_factor = None
@@ -781,7 +786,7 @@ class UtilityFunction(ABC, NamedObject):
         return self(offer)
 
     @abstractmethod
-    def __call__(self, offer: Outcome) -> Optional[UtilityValue]:
+    def __call__(self, offer: Outcome) -> UtilityValue:
         """Calculate the utility_function value for a given outcome.
 
         Args:
@@ -789,17 +794,19 @@ class UtilityFunction(ABC, NamedObject):
 
 
         Remarks:
-            - You cannot return None from overriden apply() functions but raise an exception (ValueError) if it was
+
+            - You cannot return None from overriden __call__() functions but raise an exception (ValueError) if it was
               not possible to calculate the UtilityValue.
             - Return A UtilityValue not a float for real-valued utilities for the benefit of inspection code.
+            - Return the reserved value if the offer was None
 
         Returns:
-            UtilityValue: The utility_function value which may be a distribution. If `None` it means the utility_function value cannot be
-            calculated.
+            UtilityValue: The utility_function value which may be a distribution. If `None` it means the
+                          utility_function value cannot be calculated.
         """
         if offer is None:
             return self.reserved_value
-        return None
+        raise ValueError("Could not calculate the utility value.")
 
     @classmethod
     def approximate(
@@ -1168,7 +1175,7 @@ class UtilityFunction(ABC, NamedObject):
             - A nonlinear same ufun case
             >>> outcomes = [(_,) for _ in range(10)]
             >>> u1 = MappingUtilityFunction(dict(zip(outcomes, np.linspace(1.0, 0.0, len(outcomes), endpoint=True))))
-            
+
             - A linear strictly zero sum case
             >>> outcomes = [(_,) for _ in range(10)]
             >>> u1 = MappingUtilityFunction(dict(zip(outcomes, np.linspace(0.0, 1.0, len(outcomes), endpoint=True))))
@@ -1211,6 +1218,94 @@ class UtilityFunction(ABC, NamedObject):
             return None
         return signs.mean()
 
+    def outcome_with_utility(
+        self,
+        rng: Tuple[float, float],
+        issues: List[Issue] = None,
+        outcomes: List[Outcome] = None,
+        n_trials: int = 100,
+        astype: Type = dict,
+    ) -> Optional[Outcome]:
+        """
+        Gets one outcome within the given utility range or None on failure
+
+        Args:
+            self: The utility function
+            rng: The utility range
+            issues: The issues the utility function is defined on
+            outcomes: The outcomes to sample from
+            n_trials: The maximum number of trials
+
+        Returns:
+
+            - Either issues, or outcomes should be given but not both
+
+        """
+        if outcomes is None:
+            outcomes = Issue.sample(
+                issues=issues,
+                n_outcomes=n_trials,
+                astype=astype,
+                with_replacement=False,
+                fail_if_not_enough=False,
+            )
+        n = min(len(outcomes), n_trials)
+        mn, mx = rng
+        if mn is None:
+            mn = float("-inf")
+        if mx is None:
+            mx = float("inf")
+        for i in range(n):
+            o = outcomes[i]
+            if mn <= self(o) <= mx:
+                return o
+        return None
+
+    def utility_range(
+        self,
+        issues: List[Issue] = None,
+        outcomes: Collection[Outcome] = None,
+        infeasible_cutoff: Optional[float] = None,
+        return_outcomes=False,
+    ) -> Union[
+        Tuple[UtilityValue, UtilityValue],
+        Tuple[UtilityValue, UtilityValue, Outcome, Outcome],
+    ]:
+        """Finds the range of the given utility function for the given outcomes
+
+        Args:
+            self: The utility function
+            issues: List of issues (optional)
+            outcomes: A collection of outcomes (optional)
+            infeasible_cutoff: A value under which any utility is considered infeasible and is not used in calculation
+            return_outcomes: If true, will also return an outcome for min and max utils
+
+        Returns:
+            UtilityFunction: A utility function that is guaranteed to be normalized for the set of given outcomes
+
+        """
+
+        if outcomes is None:
+            outcomes = Issue.sample(
+                issues,
+                n_outcomes=len(issues) * 100,
+                with_replacement=True,
+                fail_if_not_enough=False,
+            )
+        u = [self(o) for o in outcomes]
+        u = [float(_) for _ in u if _ is not None]
+        if infeasible_cutoff is not None:
+            if return_outcomes:
+                outcomes = [o for o, _ in zip(outcomes, u) if _ > infeasible_cutoff]
+            u = np.array([_ for _ in u if _ > infeasible_cutoff])
+
+        if len(u) == 0:
+            return self
+        if return_outcomes:
+            minloc, maxloc = np.argmin(u), np.argmax(u)
+            return u[minloc], u[maxloc], outcomes[minloc], outcomes[maxloc]
+        return float(np.min(u)), float(np.max(u))
+
 
 UtilityFunctions = List["UtilityFunction"]
 
@@ -1220,7 +1315,7 @@ class ExpDiscountedUFun(UtilityFunction):
 
     Args:
         ufun: The utility function that is being discounted
-        beta: discount factor
+        discount: discount factor
         factor: str -> The name of the AgentMechanismInterface variable based on which discounting operate
         callable -> must receive a mechanism info object and returns a float representing the factor
 
@@ -1230,29 +1325,29 @@ class ExpDiscountedUFun(UtilityFunction):
         self,
         ufun: UtilityFunction,
         ami: "AgentMechanismInterface",
-        beta: Optional[float] = None,
+        discount: Optional[float] = None,
         factor: Union[str, Callable[["AgentMechanismInterface"], float]] = "step",
         name=None,
-        reserved_value: Optional[UtilityValue] = None,
+        reserved_value: UtilityValue = float("-inf"),
         dynamic_reservation=True,
     ):
         super().__init__(name=name, reserved_value=reserved_value, ami=ami)
         self.ufun = ufun
-        self.beta = beta
+        self.discount = discount
         self.factor = factor
         self.dynamic_reservation = dynamic_reservation
 
-    def __call__(self, offer: Outcome) -> Optional[UtilityValue]:
+    def __call__(self, offer: Outcome) -> UtilityValue:
         if offer is None and not self.dynamic_reservation:
             return self.reserved_value
         u = self.ufun(offer)
-        if not self.beta or self.beta == 1.0:
+        if not self.discount or self.discount == 1.0:
             return u
         if isinstance(self.factor, str):
-            factor = getattr(self.ami, self.factor)
+            factor = getattr(self.ami.state, self.factor)
         else:
-            factor = self.factor(self.ami)
-        return (factor ** self.beta) * u
+            factor = self.factor(self.ami.state)
+        return (self.discount ** factor) * u
 
     def xml(self, issues: List[Issue]) -> str:
         output = self.ufun.xml(issues)
@@ -1260,15 +1355,15 @@ class ExpDiscountedUFun(UtilityFunction):
         factor = None
         if self.factor is not None:
             factor = str(self.factor)
-        if self.beta is not None:
-            output += f'<discount_factor value="{self.beta}" '
+        if self.discount is not None:
+            output += f'<discount_factor value="{self.discount}" '
             if factor is not None and factor != "step":
                 output += f' variable="{factor}" '
             output += "/>\n"
         return output
 
     def __str__(self):
-        return f"{self.ufun.type}-cost:{self.beta} based on {self.factor}"
+        return f"{self.ufun.type}-cost:{self.discount} based on {self.factor}"
 
     def __getattr__(self, item):
         return getattr(self.ufun, item)
@@ -1300,10 +1395,12 @@ class LinDiscountedUFun(UtilityFunction):
         ufun: UtilityFunction,
         ami: "AgentMechanismInterface",
         cost: Optional[float] = None,
-        factor: Union[str, Callable[["AgentMechanismInterface"], float]] = "step",
+        factor: Union[
+            str, Callable[["AgentMechanismInterface"], float]
+        ] = "current_step",
         power: float = 1.0,
         name=None,
-        reserved_value: Optional[UtilityValue] = None,
+        reserved_value: UtilityValue = float("-inf"),
         dynamic_reservation=True,
     ):
         super().__init__(name=name, reserved_value=reserved_value, ami=ami)
@@ -1313,16 +1410,16 @@ class LinDiscountedUFun(UtilityFunction):
         self.power = power
         self.dynamic_reservation = dynamic_reservation
 
-    def __call__(self, offer: Outcome) -> Optional[UtilityValue]:
+    def __call__(self, offer: Outcome) -> UtilityValue:
         if offer is None and not self.dynamic_reservation:
             return self.reserved_value
         u = self.ufun(offer)
         if not self.cost or self.cost == 0.0:
             return u
         if isinstance(self.factor, str):
-            factor = getattr(self.ami, self.factor)
+            factor = getattr(self.ami.state, self.factor)
         else:
-            factor = self.factor(self.ami)
+            factor = self.factor(self.ami.state)
         return u - ((factor * self.cost) ** self.power)
 
     def xml(self, issues: List[Issue]) -> str:
@@ -1361,13 +1458,13 @@ class ConstUFun(UtilityFunction):
         self,
         value: float,
         name=None,
-        reserved_value: Optional[UtilityValue] = None,
+        reserved_value: UtilityValue = float("-inf"),
         ami: AgentMechanismInterface = None,
     ):
         super().__init__(name=name, reserved_value=reserved_value, ami=ami)
         self.value = value
 
-    def __call__(self, offer: Outcome) -> Optional[UtilityValue]:
+    def __call__(self, offer: Outcome) -> UtilityValue:
         if offer is None:
             return self.reserved_value
         return self.value
@@ -1424,7 +1521,7 @@ def make_discounted_ufun(
         ufun = ExpDiscountedUFun(
             ufun=ufun,
             ami=ami,
-            beta=discount_per_round,
+            discount=discount_per_round,
             factor="step",
             dynamic_reservation=dynamic_reservation,
         )
@@ -1432,7 +1529,7 @@ def make_discounted_ufun(
         ufun = ExpDiscountedUFun(
             ufun=ufun,
             ami=ami,
-            beta=discount_per_relative_time,
+            discount=discount_per_relative_time,
             factor="relative_time",
             dynamic_reservation=dynamic_reservation,
         )
@@ -1440,15 +1537,158 @@ def make_discounted_ufun(
         ufun = ExpDiscountedUFun(
             ufun=ufun,
             ami=ami,
-            beta=discount_per_real_time,
+            discount=discount_per_real_time,
             factor="real_time",
             dynamic_reservation=dynamic_reservation,
         )
     return ufun
 
 
-class LinearUtilityAggregationFunction(UtilityFunction):
+class LinearUtilityFunction(UtilityFunction):
     r"""A linear utility function for multi-issue negotiations.
+
+    Models a linear utility function using predefined weights.
+
+    Args:
+         weights: weights for combining `issue_utilities`
+         name: name of the utility function. If None a random name will be generated.
+
+    Notes:
+
+        The utility value is calculated as:
+
+        .. math::
+
+            u = \sum_{i=0}^{n_{outcomes}-1} {w_i * \omega_i}
+
+
+    Examples:
+
+        >>> issues = [Issue((10.0, 20.0), 'price'), Issue(5, 'quality')]
+        >>> print(list(map(str, issues)))
+        ['price: (10.0, 20.0)', 'quality: (0, 4)']
+        >>> f = LinearUtilityFunction({'price': 1.0, 'quality': 4.0})
+        >>> float(f({'quality': 2, 'price': 14.0})
+        ...       ) -  (14 + 8)
+        0.0
+        >>> f = LinearUtilityFunction([1.0, 2.0])
+        >>> float(f((2, 14)) - (30))
+        0.0
+
+    Remarks:
+
+        - The mapping need not use all the issues in the output as the first example shows.
+        - If an outcome contains combinations of strings and numeric values that have corresponding weights, an
+          exception will be raised when its utility is calculated
+
+
+    """
+
+    def __init__(
+        self,
+        weights: Optional[Union[Mapping[Any, float], Sequence[float]]] = None,
+        missing_value: Optional[float] = None,
+        name: Optional[str] = None,
+        reserved_value: UtilityValue = float("-inf"),
+        ami: AgentMechanismInterface = None,
+    ) -> None:
+        super().__init__(name=name, reserved_value=reserved_value, ami=ami)
+        self.weights = weights
+        self.missing_value = missing_value
+
+    def __call__(self, offer: Optional["Outcome"]) -> Optional[UtilityValue]:
+        if offer is None:
+            return self.reserved_value
+        u = ExactUtilityValue(0.0)
+        if isinstance(self.weights, dict):
+            for k, w in self.weights.items():
+                u += w * iget(offer, k, self.missing_value)
+            return u
+        offer = outcome_as_tuple(offer)
+        return sum(w * v for w, v in zip(self.weights, offer))
+
+    def xml(self, issues: List[Issue]) -> str:
+        """ Generates an XML string representing the utility function
+
+        Args:
+            issues:
+
+        Examples:
+
+            >>> issues = [Issue(values=10, name='i1'), Issue(values=4, name='i2')]
+            >>> f = LinearUtilityFunction(weights=[1.0, 4.0])
+            >>> print(f.xml(issues))
+            <issue index="1" etype="discrete" type="discrete" vtype="discrete" name="i1">
+                <item index="1" value="0" evaluation="0" />
+                <item index="2" value="1" evaluation="1" />
+                <item index="3" value="2" evaluation="2" />
+                <item index="4" value="3" evaluation="3" />
+                <item index="5" value="4" evaluation="4" />
+                <item index="6" value="5" evaluation="5" />
+                <item index="7" value="6" evaluation="6" />
+                <item index="8" value="7" evaluation="7" />
+                <item index="9" value="8" evaluation="8" />
+                <item index="10" value="9" evaluation="9" />
+            </issue>
+            <issue index="2" etype="discrete" type="discrete" vtype="discrete" name="i2">
+                <item index="1" value="0" evaluation="0" />
+                <item index="2" value="1" evaluation="1" />
+                <item index="3" value="2" evaluation="2" />
+                <item index="4" value="3" evaluation="3" />
+            </issue>
+            <weight index="1" value="1.0">
+            </weight>
+            <weight index="2" value="4.0">
+            </weight>
+            <BLANKLINE>
+
+        """
+        output = ""
+        keys = list(ikeys(issues))
+        for i, k in enumerate(keys):
+            issue_name = iget(issues, k).name
+            output += f'<issue index="{i+1}" etype="discrete" type="discrete" vtype="discrete" name="{issue_name}">\n'
+            vals = iget(issues, k).all
+            for indx, u in enumerate(vals):
+                output += (
+                    f'    <item index="{indx+1}" value="{u}" evaluation="{u}" />\n'
+                )
+            output += "</issue>\n"
+        for i, k in enumerate(keys):
+            output += (
+                f'<weight index="{i+1}" value="{iget(self.weights, k)}">\n</weight>\n'
+            )
+        return output
+
+    def __str__(self):
+        return f"w: {self.weights}"
+
+    def utility_range(
+        self,
+        issues: List[Issue] = None,
+        outcomes: Collection[Outcome] = None,
+        infeasible_cutoff: Optional[float] = None,
+        return_outcomes=False,
+    ) -> Union[
+        Tuple[UtilityValue, UtilityValue],
+        Tuple[UtilityValue, UtilityValue, Outcome, Outcome],
+    ]:
+        # The minimum and maximum must be at one of the edges of the outcome space. Just enumerate them
+        if issues is not None:
+            ranges = [(i.min_value, i.max_value) for i in issues]
+            u = sorted(
+                [(self(outcome), outcome) for outcome in itertools.product(*ranges)]
+            )
+            if return_outcomes:
+                return u[0][0], u[-1][0], u[0][1], u[-1][1]
+            return u[0][0], u[-1][0]
+        return super().utility_range(
+            issues, outcomes, infeasible_cutoff, return_outcomes
+        )
+
+
+class LinearUtilityAggregationFunction(UtilityFunction):
+    r"""A linear aggregation utility function for multi-issue negotiations.
 
     Models a linear utility function using predefined weights:\.
 
@@ -1463,7 +1703,7 @@ class LinearUtilityAggregationFunction(UtilityFunction):
 
         .. math::
 
-        u = \sum_{i=0}^{n_{outcomes}-1} {w_i * u_i}
+            u = \sum_{i=0}^{n_{outcomes}-1} {w_i * u_i(\omega_i)}
 
 
     Examples:
@@ -1471,7 +1711,7 @@ class LinearUtilityAggregationFunction(UtilityFunction):
         >>> issues = [Issue((10.0, 20.0), 'price'), Issue(['delivered', 'not delivered'], 'delivery')
         ...           , Issue(5, 'quality')]
         >>> print(list(map(str, issues)))
-        ['price: (10.0, 20.0)', "delivery: ['delivered', 'not delivered']", 'quality: 5']
+        ['price: (10.0, 20.0)', "delivery: ['delivered', 'not delivered']", 'quality: (0, 4)']
         >>> f = LinearUtilityAggregationFunction({'price': lambda x: 2.0*x
         ...                          , 'delivery': {'delivered': 10, 'not delivered': -10}
         ...                          , 'quality': MappingUtilityFunction(lambda x: x-3)}
@@ -1507,7 +1747,7 @@ class LinearUtilityAggregationFunction(UtilityFunction):
         ],
         weights: Optional[Union[Mapping[Any, float], Sequence[float]]] = None,
         name: Optional[str] = None,
-        reserved_value: Optional[UtilityValue] = None,
+        reserved_value: UtilityValue = float("-inf"),
         ami: AgentMechanismInterface = None,
     ) -> None:
         super().__init__(name=name, reserved_value=reserved_value, ami=ami)
@@ -1635,7 +1875,10 @@ class LinearUtilityAggregationFunction(UtilityFunction):
             output += f'<issue index="{i+1}" etype="discrete" type="discrete" vtype="discrete" name="{issue_name}">\n'
             vals = iget(issues, k).all
             for indx, v in enumerate(vals):
-                u = gmap(iget(self.issue_utilities, k), v)
+                try:
+                    u = gmap(iget(self.issue_utilities, issue_name), v)
+                except:
+                    u = gmap(iget(self.issue_utilities, k), v)
                 v_ = (
                     v
                     if not (isinstance(v, tuple) or isinstance(v, list))
@@ -1689,7 +1932,7 @@ class MappingUtilityFunction(UtilityFunction):
         >>> issues = [Issue((10.0, 20.0), 'price'), Issue(['delivered', 'not delivered'], 'delivery')
         ...           , Issue(5, 'quality')]
         >>> print(list(map(str, issues)))
-        ['price: (10.0, 20.0)', "delivery: ['delivered', 'not delivered']", 'quality: 5']
+        ['price: (10.0, 20.0)', "delivery: ['delivered', 'not delivered']", 'quality: (0, 4)']
         >>> f = MappingUtilityFunction(lambda x: x['price'] if x['delivery'] == 'delivered' else -1.0)
         >>> g = MappingUtilityFunction(lambda x: x['price'] if x['delivery'] == 'delivered' else -1.0
         ...     , default=-1000 )
@@ -1713,7 +1956,7 @@ class MappingUtilityFunction(UtilityFunction):
         mapping: OutcomeUtilityMapping,
         default=None,
         name: str = None,
-        reserved_value: Optional[UtilityValue] = None,
+        reserved_value: UtilityValue = float("-inf"),
         ami: AgentMechanismInterface = None,
     ) -> None:
         super().__init__(name=name, reserved_value=reserved_value, ami=ami)
@@ -1793,14 +2036,17 @@ class MappingUtilityFunction(UtilityFunction):
 class RandomUtilityFunction(MappingUtilityFunction):
     """A random utility function for a discrete outcome space"""
 
-    def __init__(self, outcomes: List[Outcome]):
+    def __init__(self, outcomes: List[Outcome], reserved_value=float("-inf")):
         if len(outcomes) < 1:
             raise ValueError("Cannot create a random utility function without outcomes")
         if isinstance(outcomes[0], tuple):
             pass
         else:
             outcomes = [tuple(o.keys()) for o in outcomes]
-        super().__init__(mapping=dict(zip(outcomes, np.random.rand(len(outcomes)))))
+        super().__init__(
+            mapping=dict(zip(outcomes, np.random.rand(len(outcomes)))),
+            reserved_value=reserved_value,
+        )
 
 
 class NonLinearUtilityAggregationFunction(UtilityFunction):
@@ -1830,7 +2076,7 @@ class NonLinearUtilityAggregationFunction(UtilityFunction):
         >>> issues = [Issue((10.0, 20.0), 'price'), Issue(['delivered', 'not delivered'], 'delivery')
         ...           , Issue(5, 'quality')]
         >>> print(list(map(str, issues)))
-        ['price: (10.0, 20.0)', "delivery: ['delivered', 'not delivered']", 'quality: 5']
+        ['price: (10.0, 20.0)', "delivery: ['delivered', 'not delivered']", 'quality: (0, 4)']
         >>> g = NonLinearUtilityAggregationFunction({ 'price': lambda x: 2.0*x
         ...                                         , 'delivery': {'delivered': 10, 'not delivered': -10}
         ...                                         , 'quality': MappingUtilityFunction(lambda x: x-3)}
@@ -1853,7 +2099,7 @@ class NonLinearUtilityAggregationFunction(UtilityFunction):
         issue_utilities: MutableMapping[Any, GenericMapping],
         f: Callable[[Dict[Any, UtilityValue]], UtilityValue],
         name: Optional[str] = None,
-        reserved_value: Optional[UtilityValue] = None,
+        reserved_value: UtilityValue = float("-inf"),
         ami: AgentMechanismInterface = None,
     ) -> None:
         super().__init__(name=name, reserved_value=reserved_value, ami=ami)
@@ -2030,7 +2276,7 @@ class HyperRectangleUtilityFunction(UtilityFunction):
         ignore_issues_not_in_input=False,
         ignore_failing_range_utilities=False,
         name: Optional[str] = None,
-        reserved_value: Optional[UtilityValue] = None,
+        reserved_value: UtilityValue = float("-inf"),
         ami: AgentMechanismInterface = None,
     ) -> None:
         super().__init__(name=name, reserved_value=reserved_value, ami=ami)
@@ -2098,7 +2344,7 @@ class NonlinearHyperRectangleUtilityFunction(UtilityFunction):
         mappings: OutcomeUtilityMappings,
         f: Callable[[List[UtilityValue]], UtilityValue],
         name: Optional[str] = None,
-        reserved_value: Optional[UtilityValue] = None,
+        reserved_value: UtilityValue = float("-inf"),
         ami: AgentMechanismInterface = None,
     ) -> None:
         super().__init__(name=name, reserved_value=reserved_value, ami=ami)
@@ -2136,7 +2382,7 @@ class ComplexWeightedUtilityFunction(UtilityFunction):
         ufuns: Iterable[UtilityFunction],
         weights: Optional[Iterable[float]] = None,
         name=None,
-        reserved_value: Optional[UtilityValue] = None,
+        reserved_value: UtilityValue = float("-inf"),
         ami: AgentMechanismInterface = None,
     ):
         super().__init__(name=name, reserved_value=reserved_value, ami=ami)
@@ -2145,7 +2391,7 @@ class ComplexWeightedUtilityFunction(UtilityFunction):
             weights = [1.0] * len(self.ufuns)
         self.weights = list(weights)
 
-    def __call__(self, offer: Outcome) -> Optional[UtilityValue]:
+    def __call__(self, offer: Outcome) -> UtilityValue:
         """Calculate the utility_function value for a given outcome.
 
         Args:
@@ -2196,14 +2442,14 @@ class ComplexNonlinearUtilityFunction(UtilityFunction):
         ufuns: Iterable[UtilityFunction],
         combination_function=Callable[[Iterable[UtilityValue]], UtilityValue],
         name=None,
-        reserved_value: Optional[UtilityValue] = None,
+        reserved_value: UtilityValue = float("-inf"),
         ami: AgentMechanismInterface = None,
     ):
         super().__init__(name=name, reserved_value=reserved_value, ami=ami)
         self.ufuns = list(ufuns)
         self.combination_function = combination_function
 
-    def __call__(self, offer: Outcome) -> Optional[UtilityValue]:
+    def __call__(self, offer: Outcome) -> UtilityValue:
         """Calculate the utility_function value for a given outcome.
 
         Args:
@@ -2259,7 +2505,7 @@ class IPUtilityFunction(UtilityFunction):
         distributions: Iterable["UtilityDistribution"] = None,
         issue_names: Iterable[str] = None,
         name=None,
-        reserved_value: Optional[UtilityValue] = None,
+        reserved_value: UtilityValue = float("-inf"),
         ami: AgentMechanismInterface = None,
     ):
         super().__init__(name=name, reserved_value=reserved_value, ami=ami)
@@ -2347,13 +2593,18 @@ class IPUtilityFunction(UtilityFunction):
         """
         if isinstance(u.mapping, dict):
             return cls.from_mapping(
-                u.mapping, range=range, uncertainty=uncertainty, variability=variability
+                u.mapping,
+                range=range,
+                uncertainty=uncertainty,
+                variability=variability,
+                reserved_value=u.reserved_value,
             )
         return cls.from_mapping(
             dict(zip(ikeys(u.mapping), ivalues(u.mapping))),
             range=range,
             uncertainty=uncertainty,
             variability=variability,
+            reserved_value=u.reserved_value,
         )
 
     @classmethod
@@ -2363,6 +2614,7 @@ class IPUtilityFunction(UtilityFunction):
         range: Tuple[float, float] = (0.0, 1.0),
         uncertainty: float = 0.5,
         variability: float = 0.0,
+        reserved_value: float = float("-inf"),
     ) -> "IPUtilityFunction":
         """
         Generates a distribution from which `u` may have been sampled
@@ -2370,6 +2622,8 @@ class IPUtilityFunction(UtilityFunction):
             mapping: mapping from outcomes to float values
             range: range of the utility_function values
             uncertainty: uncertainty level
+            variability: The variability within the ufun
+            reserved_value: The reserved value
 
         Examples:
 
@@ -2412,6 +2666,7 @@ class IPUtilityFunction(UtilityFunction):
                 Distribution.around(value=mapping[o], uncertainty=u, range=range)
                 for o, u in zip(outcomes, uncertainties)
             ],
+            reserved_value=reserved_value,
         )
 
     def __str__(self):
@@ -2482,7 +2737,7 @@ class IPUtilityFunction(UtilityFunction):
             return outcome
         return tuple((outcome.get(_, None) for _ in self.issue_names))
 
-    def __call__(self, offer: Outcome) -> Optional[UtilityValue]:
+    def __call__(self, offer: Outcome) -> UtilityValue:
         """Calculate the utility_function value for a given outcome.
 
         Args:
@@ -2639,11 +2894,7 @@ def normalize(
         if -epsilon <= mn <= 1 + epsilon:
             return ufun
         else:
-            r = (
-                float(ufun.reserved_value) / mn
-                if ufun.reserved_value is not None and mn != 0.0
-                else 0.0
-            )
+            r = float(ufun.reserved_value) / mn if mn != 0.0 else 0.0
             if infeasible_cutoff is not None:
                 return ComplexNonlinearUtilityFunction(
                     ufuns=[ufun],
@@ -2662,7 +2913,7 @@ def normalize(
                     ami=ufun.ami,
                 )
     scale = (rng[1] - rng[0]) / (mx - mn)
-    r = scale * (ufun.reserved_value - mn) if ufun.reserved_value is not None else 0.0
+    r = scale * (ufun.reserved_value - mn)
     if infeasible_cutoff is not None:
         return ComplexNonlinearUtilityFunction(
             ufuns=[ufun],
@@ -2695,8 +2946,61 @@ class JavaUtilityFunction(UtilityFunction, JavaCallerMixin):
         if java_object is None:
             self._java_object.fromMap(to_java(self))
 
-    def __call__(self, offer: Outcome) -> Optional[UtilityValue]:
+    def __call__(self, offer: Outcome) -> UtilityValue:
         return self._java_object.call(to_java(outcome_as_dict(offer)))
 
     def xml(self, issues: List[Issue]) -> str:
         return "Java UFun"
+
+
+def outcome_with_utility(
+    ufun: UtilityFunction,
+    rng: Tuple[float, float],
+    issues: List[Issue] = None,
+    outcomes: List[Outcome] = None,
+    n_trials: int = 100,
+    astype: Type = tuple,
+) -> Optional[Outcome]:
+    """
+    Gets one outcome within the given utility range or None on failure
+
+    Args:
+        ufun: The utility function
+        rng: The utility range
+        issues: The issues the utility function is defined on
+        outcomes: The outcomes to sample from
+        n_trials: The maximum number of trials
+        astype: The type of the outcome (tuple, dict, OutcomeType)
+
+    Returns:
+
+        - Either issues, or outcomes should be given but not both
+
+    """
+    return ufun.outcome_with_utility(rng, issues, outcomes, n_trials, astype)
+
+
+def utility_range(
+    ufun: UtilityFunction,
+    issues: List[Issue] = None,
+    outcomes: Collection[Outcome] = None,
+    infeasible_cutoff: Optional[float] = None,
+    return_outcomes=False,
+) -> Union[
+    Tuple[UtilityValue, UtilityValue],
+    Tuple[UtilityValue, UtilityValue, Outcome, Outcome],
+]:
+    """Finds the range of the given utility function for the given outcomes
+
+    Args:
+        ufun: The utility function
+        issues: List of issues (optional)
+        outcomes: A collection of outcomes (optional)
+        infeasible_cutoff: A value under which any utility is considered infeasible and is not used in calculation
+        return_outcomes: If true, returns an outcome with the min and another with the max utility
+
+    Returns:
+        Minumum utility, maximum utility (and if return_outcomes, an outcome at each)
+
+    """
+    return ufun.utility_range(issues, outcomes, infeasible_cutoff, return_outcomes)

@@ -1,0 +1,3 @@
+[submodule ".\\negmas\\apps\\scml"]
+	path = .\\negmas\\apps\\scml
+	url = https://github.com/yasserfarouk/scml

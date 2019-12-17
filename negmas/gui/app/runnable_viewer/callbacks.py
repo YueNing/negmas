@@ -9,7 +9,7 @@ import json
 from typing import Dict, List
 from negmas.checkpoints import CheckpointRunner
 from negmas.sao import SAOMechanism
-from negmas.apps.scml import SCMLWorld
+from scml.scml2019 import SCMLWorld
 from negmas.visualizers import VISUALIZERS, visualizer
 from negmas.helpers import get_full_type_name, instantiate, get_class
 from negmas.utilities import UtilityFunction

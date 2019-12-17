@@ -26,8 +26,8 @@ def render(widget: Union[str, Widget]) -> Union[list, dict]:
             return [
                 dbc.Table(
                     [html.Tbody([html.Tr([html.Td(k), html.Td(v)]) for k, v in widget.content.items()])],
-                    bordered=True,
-                    dark=True,
+                    bordered=False,
+                    dark=False,
                 )
             ]
         elif widget.kind == "dict_list_dict":

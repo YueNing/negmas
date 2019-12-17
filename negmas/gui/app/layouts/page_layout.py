@@ -12,12 +12,7 @@ from negmas.gui.app.layouts.widget_layout import (
 )
 
 # Used for entry page, home page '/'
-MAIN_LAYOUT = html.Div([navbar, main_entry_body], style={
-    "width": "100%",
-    "height": "500px",
-    # "background-color": "black",
-    "background-image": "Z:/negmas/negmas/gui/app/resources/image/negmas-logo.png"
-    }
+MAIN_LAYOUT = html.Div([navbar, main_entry_body], id="main_layout"
 )
 
 # DEFAULT_LAYOUT   described as following
@@ -35,7 +30,7 @@ DEFAULT_LAYOUT_RUNNABLE =  html.Div(
                         [
                             html.Br(),
                             # [System] control bar, predefined
-                            _left_up_button_group,
+                            html.Div(_left_up_button_group, id='left-up-button'),
                             html.Br(),
                             html.Div(id="negmas-basic_info"),
                             html.Br(),
@@ -101,6 +96,6 @@ def set_dynamically_layout(object_set):
     if object_set.layout.children[0].children[0].children[5].id == 'negmas-children':
         object_set.layout.children[0].children[0].children[5] = html.Div(object_set.init_result[1], id="negmas-children")
     # import ipdb;ipdb.set_trace()
-    object_set.layout.children.append(html.Div("session_id11111", id="negmas-session_id", style={'display':'none'}))
+    object_set.layout.children.append(html.Div("session_id11111", id="negmas-session_id"))
     # if object_set.layout.children[]
     # import pdb;pdb.set_trace()

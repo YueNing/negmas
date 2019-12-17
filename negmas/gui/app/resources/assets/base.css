@@ -29,3 +29,42 @@
     max-width: 50%;
     height: auto;
 }
+
+#offline-checkpoint-file {
+        width: 75%;
+        height: 60px;
+        line-height: 60px;
+        border-width: 1px;
+        border-style: dashed;
+        border-radius: 5px;
+        text-align: center;
+        margin: 10px;
+}
+
+#new-config-path {
+    width: 85%;
+    height: 60px;
+    line-height: 60px;
+    border-width: 1px;
+    border-style: dashed;
+    border-radius: 5px;
+    text-align: center;
+    margin: 10px;
+}
+
+#checkpoint-id {
+    font-size: 13px;
+}
+
+#intermediate-value {
+    display: none;
+}
+
+#main_layout {
+    width: 100%;
+    height: 500px;
+}
+
+#negmas-session_id {
+    display: none;
+}

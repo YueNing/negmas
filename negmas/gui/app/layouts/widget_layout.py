@@ -30,7 +30,7 @@ base = html.Div(
         html.Div(
             id='page-content'
         ),
-        html.Div(id='intermediate-value', style={'display': 'none'}),
+        html.Div(id='intermediate-value'),
     ]
 )
 
@@ -77,16 +77,6 @@ run_online = dbc.Card(
                 children=html.Div([
                     'Config file path ... ',
                 ]),
-                style={
-                    'width': '85%',
-                    'height': '60px',
-                    'lineHeight': '60px',
-                    'borderWidth': '1px',
-                    'borderStyle': 'dashed',
-                    'borderRadius': '5px',
-                    'textAlign': 'center',
-                    'margin': '10px'
-                },
             ),
             html.Div(id='output-data-upload'),
             dbc.Button("Run", color="secondary", className="btn-block", id="run"),
@@ -104,16 +94,6 @@ run_offline = dbc.Card(
                 children=html.Div([
                     'Checkpoint file',
                 ]),
-                style={
-                    'width': '75%',
-                    'height': '60px',
-                    'lineHeight': '60px',
-                    'borderWidth': '1px',
-                    'borderStyle': 'dashed',
-                    'borderRadius': '5px',
-                    'textAlign': 'center',
-                    'margin': '10px'
-                },
             ),
             dbc.Input(
                 placeholder='[Optional] component ID',
@@ -121,9 +101,6 @@ run_offline = dbc.Card(
                 value='',
                 id="checkpoint-id",
                 className="mt-1",
-                style={
-                    'fontSize': '13px'
-                }
             ),
             dbc.Checklist(
                 options=[

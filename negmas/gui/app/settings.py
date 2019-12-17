@@ -70,6 +70,7 @@ new_folder: Path = tmp_path / unique_name("empty", sep="")
 
 DEFAULT_RUNNABLE_PARAMS = {
     "negmas.sao.SAOMechanism": {
+        "type": "negmas.sao.SAOMechanism",
         "outcomes": 10,
         "n_steps": 100,
         "offering_is_accepting": True,

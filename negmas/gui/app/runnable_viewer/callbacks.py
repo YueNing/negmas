@@ -6,12 +6,13 @@ import base64
 import pandas as pd
 import io
 import json
-from typing import Dict
+from typing import Dict, List
 from negmas.checkpoints import CheckpointRunner
 from negmas.sao import SAOMechanism
 from negmas.apps.scml import SCMLWorld
 from negmas.visualizers import VISUALIZERS, visualizer
 from negmas.helpers import get_full_type_name, instantiate, get_class
+from negmas.utilities import UtilityFunction
 from typing import Optional, Union
 
 from negmas.gui.app.runnable_viewer.layout import layout
@@ -69,13 +70,21 @@ def run_callback(n_clicks, run_option, config_contents, filename, date):
     print(f'n_clciks: {n_clicks}, run_option: {run_option}, filename: {filename} !!')
     
     # Need to pre analyse the config, defined in json file
-    def _pre_check_config(run_option, run_config: dict):
+    def _pre_check_config(run_option, run_config: dict) -> List:
+        assert(run_option == run_config["type"])
+        del run_config["type"]
         if run_option == "negmas.sao.SAOMechanism":
             if 'negotiators' in run_config:
-                negotiators = run_config.get('negotiators', None)
+                if type(run_config['negotiators']) == list:
+                    negotiators =  run_config.get('negotiators', None)
+                elif type(run_config['negotiators']) == str:
+                    negotiators = [get_class(_) for _ in run_config['negotiators'].replace(" ", "").split(',')]
                 del run_config['negotiators']
             if 'mapping_utility_function' in run_config:
-                mapping_utility_function = run_config.get("mapping_utility_function", None)
+                if type(run_config['mapping_utility_function']) == str:
+                    mapping_utility_function = get_class(run_config['mapping_utility_function'].strip())
+                elif issubclass(run_config['mapping_utility_function'], UtilityFunction):
+                    mapping_utility_function = run_config.get("mapping_utility_function", None)
                 del run_config['mapping_utility_function']
             return run_config, negotiators, mapping_utility_function
 
@@ -83,7 +92,7 @@ def run_callback(n_clicks, run_option, config_contents, filename, date):
     # get config from json file
         run_config = parse_contents(config_contents, filename, date)
         config, negotiators, mapping_utility_function = _pre_check_config(run_option, run_config)
-
+        # import pdb;pdb.set_trace()
     else:
         try:
             run_config = DEFAULT_RUNNABLE_PARAMS[run_option]

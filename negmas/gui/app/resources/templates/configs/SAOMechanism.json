@@ -1,0 +1,15 @@
+{
+    "type": "negmas.sao.SAOMechanism",
+    "outcomes": 10,
+    "n_steps": 100,
+    "offering_is_accepting": true,
+    "avoid_ultimatum": false,
+    "checkpoint_every": 2,
+    "checkpoint_folder": "./tmp/empty_checkpoint_folder",
+    "checkpoint_filename": "SAOMechanism",
+    "extra_checkpoint_info": null,
+    "exist_ok": true,
+    "single_checkpoint": false,
+    "negotiators": "negmas.AspirationNegotiator, negmas.AspirationNegotiator, negmas.AspirationNegotiator",
+    "mapping_utility_function": "negmas.MappingUtilityFunction"
+}
